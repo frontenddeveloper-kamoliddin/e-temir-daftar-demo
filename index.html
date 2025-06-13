@@ -31,5 +31,14 @@
   </div>
 
   <script type="module" src="index.js"></script>
+  <script>
+    useEffect(() => {
+      const fetchData = async () => {
+        const querySnapshot = await getDocs(collection(db, "qarzlar"));
+        setQarzlar(querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+      };
+      fetchData();
+    }, []);
+  </script>
 </body>
 </html>

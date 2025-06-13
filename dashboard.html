@@ -76,5 +76,34 @@
     </div>
   </div>
   <script type="module" src="dashboard.js"></script>
+  <script>
+    import { useEffect, useState } from "react";
+    import { onSnapshot, collection } from "firebase/firestore";
+    import { db } from "../firebase"; // Firebase config
+
+    function YourComponent() {
+      const [qarzlar, setQarzlar] = useState([]);
+      const [loading, setLoading] = useState(true);
+
+      useEffect(() => {
+        const unsubscribe = onSnapshot(
+          collection(db, "qarzlar"),
+          (snapshot) => {
+            const data = snapshot.docs.map((doc) => ({
+              id: doc.id,
+              ...doc.data(),
+            }));
+            setQarzlar(data);
+            setLoading(false);
+          }
+        );
+        return () => unsubscribe();
+      }, []);
+
+      if (loading) return <div>Yuklanmoqda...</div>;
+
+      // ...existing code...
+    }
+  </script>
 </body>
 </html>
