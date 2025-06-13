@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Dashboard</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    // Dark mode toggle
+    if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+      document.documentElement.classList.add('dark')
+    } else {
+      document.documentElement.classList.remove('dark')
+    }
+  </script>
+</head>
+<body class="bg-gray-100 dark:bg-gray-900 min-h-screen">
+  <!-- Sidebar -->
+  <div id="sidebar" class="fixed top-0 left-0 h-full w-64 bg-white dark:bg-gray-800 shadow-lg z-30 transform -translate-x-full transition-transform duration-300">
+    <div class="flex items-center justify-between p-4 border-b dark:border-gray-700">
+      <span class="font-bold text-lg">Menyu</span>
+      <button id="closeSidebar" class="text-gray-500 hover:text-red-500">&times;</button>
+    </div>
+    <div class="p-4 space-y-4">
+      <button id="logoutBtn" class="w-full bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded transition">Chiqish</button>
+      <button id="toggleTheme" class="w-full bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-100 px-4 py-2 rounded transition">Dark/Light</button>
+    </div>
+  </div>
+  <!-- Sidebar overlay -->
+  <div id="sidebarOverlay" class="fixed inset-0 bg-black bg-opacity-40 z-20 hidden"></div>
+  <!-- Main content -->
+  <div class="min-h-screen flex flex-col items-center justify-start pt-6">
+    <!-- Top bar -->
+    <div class="w-full max-w-3xl flex items-center justify-between mb-6 px-4">
+      <button id="openSidebar" class="text-2xl text-gray-700 dark:text-gray-200">&#9776;</button>
+      <h2 class="text-2xl font-bold text-center flex-1">Qarzdorlar Dashboard</h2>
+    </div>
+    <!-- Qidiruv -->
+    <div class="w-full max-w-3xl mb-4 px-4">
+      <input id="searchInput" type="text" placeholder="Qarzdorni qidiring..." class="w-full p-3 border border-gray-300 rounded dark:bg-gray-700 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-400 text-gray-900 dark:text-gray-100">
+    </div>
+    <!-- Qarzdor qo'shish formasi -->
+    <form id="debtorForm" class="w-full max-w-3xl bg-white dark:bg-gray-800 rounded-lg shadow-lg p-4 mb-6 space-y-4">
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <input id="debtorName" type="text" placeholder="Ism" required class="p-3 border border-gray-300 rounded dark:bg-gray-700 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-400 text-gray-900 dark:text-gray-100">
+        <input id="debtorProduct" type="text" placeholder="Mahsulot nomi" required class="p-3 border border-gray-300 rounded dark:bg-gray-700 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-400 text-gray-900 dark:text-gray-100">
+        <input id="debtorCount" type="number" min="1" placeholder="Mahsulot soni" required class="p-3 border border-gray-300 rounded dark:bg-gray-700 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-400 text-gray-900 dark:text-gray-100">
+        <input id="debtorPrice" type="number" min="1" placeholder="Mahsulot narxi" required class="p-3 border border-gray-300 rounded dark:bg-gray-700 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-400 text-gray-900 dark:text-gray-100">
+      </div>
+      <input id="debtorNote" type="text" placeholder="Qo'shimcha izoh (ixtiyoriy)" class="w-full p-3 border border-gray-300 rounded dark:bg-gray-700 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-400 text-gray-900 dark:text-gray-100">
+      <button type="submit" class="w-full bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded transition">Qarzdor qo'shish</button>
+    </form>
+    <!-- Umumiy statistika -->
+    <div class="w-full max-w-3xl flex flex-col md:flex-row gap-4 mb-4 px-4">
+      <div class="flex-1 bg-blue-100 dark:bg-blue-900 rounded-lg p-4 text-center">
+        <div class="text-lg font-bold">Umumiy qo‘shilgan</div>
+        <div id="totalAdded" class="text-2xl font-bold mt-2">0 so‘m</div>
+      </div>
+      <div class="flex-1 bg-red-100 dark:bg-red-900 rounded-lg p-4 text-center">
+        <div class="text-lg font-bold">Umumiy ayirilgan</div>
+        <div id="totalSubtracted" class="text-2xl font-bold mt-2">0 so‘m</div>
+      </div>
+      <div class="flex-1 bg-green-100 dark:bg-green-900 rounded-lg p-4 text-center">
+        <div class="text-lg font-bold">Umumiy qarzdorlik</div>
+        <div id="totalDebt" class="text-2xl font-bold mt-2">0 so‘m</div>
+      </div>
+    </div>
+    <!-- Qarzdorlar ro'yxati -->
+    <div id="debtorsList" class="w-full max-w-3xl space-y-4 px-4 mb-10"></div>
+  </div>
+  <!-- Qarzdor modal -->
+  <div id="debtorModal" class="fixed inset-0 z-40 flex items-center justify-center bg-black bg-opacity-50 hidden">
+    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg w-full max-w-2xl p-6 relative">
+      <button id="closeModal" class="absolute top-2 right-2 text-2xl text-gray-500 hover:text-red-500">&times;</button>
+      <div id="modalContent"></div>
+    </div>
+  </div>
+  <script type="module" src="dashboard.js"></script>
+</body>
+</html>
