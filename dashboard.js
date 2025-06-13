@@ -308,5 +308,3 @@ function openDebtorModal(debtor) {
     debtorModal.classList.add("hidden");
   };
 }
-
-// {qarzlar.map(q => <div key={q.id}>{q.nomi}</div>)}

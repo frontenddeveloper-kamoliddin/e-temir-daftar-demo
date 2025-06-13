@@ -1,7 +1,6 @@
 // Firebase konfiguratsiya
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, updateProfile } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-import { getFirestore, collection, onSnapshot } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyACHEuejKVniBAcYExQxk23A9QD84bUaB4",
@@ -14,7 +13,6 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
-const db = getFirestore(app);
 
 // Forma ko‘rsatish tugmalari
 const showLogin = document.getElementById("showLogin");
@@ -77,12 +75,3 @@ function showError(error) {
 // } catch (error) {
 //   showError(error);
 // }
-
-// Firestore dan ma'lumotlarni olish
-useEffect(() => {
-  const unsubscribe = onSnapshot(collection(db, "qarzlar"), (snapshot) => {
-    console.log("Snapshot:", snapshot.docs);
-    setQarzlar(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
-  });
-  return () => unsubscribe();
-}, []);
