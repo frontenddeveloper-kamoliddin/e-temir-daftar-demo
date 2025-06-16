@@ -139,6 +139,8 @@ function renderStats(debtors) {
 
 // Qarzdorlar cardlari (o‘chirish tugmasi bilan)
 function renderDebtors(debtors) {
+  debtors.sort((a, b) => a.name.localeCompare(b.name, 'uz', { sensitivity: 'base' }));
+
   renderStats(debtors);
   const list = document.getElementById("debtorsList");
   list.innerHTML = "";
@@ -147,6 +149,20 @@ function renderDebtors(debtors) {
     return;
   }
   debtors.forEach(d => {
+    // Carddagi mahsulot summasi
+    const productSum = (d.count || 0) * (d.price || 0);
+
+    // Batafsildagi barcha add va sub lar
+    let totalAdd = 0, totalSub = 0;
+    (d.history || []).forEach(h => {
+      if (h.type === "add") totalAdd += h.amount || 0;
+      if (h.type === "sub") totalSub += h.amount || 0;
+    });
+
+    // Umumiy qo‘shilgan = card mahsuloti + barcha add lar
+    const totalAdded = productSum + totalAdd;
+    const totalDebt = totalAdded - totalSub;
+
     const card = document.createElement("div");
     card.className = "bg-white dark:bg-gray-700 rounded-lg shadow p-4 flex items-center justify-between gap-2";
     card.innerHTML = `
@@ -154,6 +170,11 @@ function renderDebtors(debtors) {
         <div class="font-bold text-lg">${d.name}</div>
         <div class="text-sm text-gray-500 dark:text-gray-300">${d.product} (${d.count} x ${d.price} so‘m)</div>
         <div class="text-xs text-gray-400">${d.note || ""}</div>
+        <div class="mt-2 text-xs">
+          <span class="font-semibold">Umumiy qo‘shilgan: </span>${totalAdded} so‘m<br>
+          <span class="font-semibold">Ayirilgan: </span>${totalSub} so‘m<br>
+          <span class="font-semibold">Qolgan: </span>${totalDebt} so‘m
+        </div>
       </div>
       <div class="flex gap-2">
         <button class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded transition" data-id="${d.id}">Batafsil</button>
@@ -245,7 +266,7 @@ function openDebtorModal(debtor) {
       </div>
       <div class="flex-1">
         <div class="font-bold mb-2">Qo‘shilganlar</div>
-        ${addHistory || '<div class="text-gray-400">Yo‘q</div>'}
+        ${addHistory + (debtor.count * debtor.price) || '<div class="text-gray-400">Yo‘q</div>'}
         <div class="font-bold mb-2 mt-4">Ayirilganlar</div>
         ${subHistory || '<div class="text-gray-400">Yo‘q</div>'}
       </div>
@@ -307,4 +328,26 @@ function openDebtorModal(debtor) {
     loadDebtors();
     debtorModal.classList.add("hidden");
   };
+}
+
+// Qarzdorlar massivini alfavit tartibida sort qilish
+function renderDebtorsList(debtors) {
+  // Ism bo‘yicha alfavit tartibida sort qilamiz
+  debtors.sort((a, b) => a.name.localeCompare(b.name, 'uz', { sensitivity: 'base' }));
+
+  const list = document.getElementById('debtorsList');
+  list.innerHTML = '';
+  debtors.forEach(debtor => {
+    // Card yaratish va chiqarish
+    const card = document.createElement('div');
+    card.className = 'bg-white dark:bg-gray-700 rounded-lg shadow p-4 flex justify-between items-center';
+    card.innerHTML = `
+      <div>
+        <div class="font-bold text-lg">${debtor.name}</div>
+        <div class="text-gray-500">${debtor.product}</div>
+      </div>
+      <button class="batafsil-btn bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded" data-id="${debtor.id}">Batafsil</button>
+    `;
+    list.appendChild(card);
+  });
 }
