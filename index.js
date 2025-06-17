@@ -14,7 +14,7 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 
-// Forma ko‘rsatish tugmalari
+
 const showLogin = document.getElementById("showLogin");
 const showRegister = document.getElementById("showRegister");
 const loginForm = document.getElementById("loginForm");

@@ -148,7 +148,7 @@
       <div class="error-msg" id="registerError"></div>
     </form>
   </div>
-  <!-- Firebase va auth kodlari -->
+  <!-- Firebase va auth  -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js";
     import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, updateProfile } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js";
@@ -166,7 +166,7 @@
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
 
-    // Formlar va tugmalar
+
     const loginForm = document.getElementById("loginForm");
     const registerForm = document.getElementById("registerForm");
     const showRegister = document.getElementById("showRegister");
@@ -174,7 +174,7 @@
     const loginError = document.getElementById("loginError");
     const registerError = document.getElementById("registerError");
 
-    // Formlar o'zaro almashishi
+ 
     showRegister.onclick = () => {
       loginForm.style.display = "none";
       registerForm.style.display = "flex";
@@ -212,16 +212,16 @@
       }
       createUserWithEmailAndPassword(auth, email, password)
         .then((userCredential) => {
-          // Foydalanuvchi nomini yangilash
+          
           return updateProfile(userCredential.user, { displayName: name });
         })
         .then(() => window.location.href = "dashboard.html")
         .catch(err => registerError.innerText = err.message);
     };
   </script>
-  <!-- Particle background -->
+
   <script>
-    // Particle animation
+
     const canvas = document.getElementById('particles-canvas');
     const ctx = canvas.getContext('2d');
     let w = window.innerWidth;
@@ -251,10 +251,9 @@
         ctx.arc(p.x, p.y, p.r, 0, 2 * Math.PI);
         ctx.fillStyle = p.color;
         ctx.fill();
-        // Move
+ 
         p.x += p.dx;
-        p.y += p.dy;
-        // Bounce from edges
+
         if (p.x < 0 || p.x > w) p.dx *= -1;
         if (p.y < 0 || p.y > h) p.dy *= -1;
       }
@@ -262,7 +261,7 @@
     }
     drawParticles();
 
-    // Responsive
+
     window.addEventListener('resize', () => {
       w = window.innerWidth;
       h = window.innerHeight;
