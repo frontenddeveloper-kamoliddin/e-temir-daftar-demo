@@ -29,7 +29,11 @@ const auth = getAuth(app);
 const db = getFirestore(app);
 
 onAuthStateChanged(auth, (user) => {
-  if (!user) window.location.href = "index.html";
+  if (!user) {
+    window.location.href = "index.html";
+  } else {
+    loadDebtors(); // Faqat user aniqlanganda chaqiriladi
+  }
 });
 const sidebar = document.getElementById("sidebar");
 const sidebarOverlay = document.getElementById("sidebarOverlay");
@@ -113,7 +117,6 @@ async function loadDebtors() {
   }
   renderDebtors(debtors);
 }
-loadDebtors();
 function renderStats(debtors) {
   let totalAdded = 0,
     totalSubtracted = 0,

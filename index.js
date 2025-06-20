@@ -1,5 +1,5 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js";
-import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js";
+import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js";
 
 // Firebase konfiguratsiya
 const firebaseConfig = {
@@ -59,3 +59,11 @@ registerForm.onsubmit = (e) => {
     .then(() => window.location.href = "dashboard.html")
     .catch(err => registerError.innerText = err.message);
 };
+
+// Foydalanuvchi login bo'lganini tekshirish
+onAuthStateChanged(auth, (user) => {
+  if (user) {
+    // Agar foydalanuvchi login bo'lgan bo'lsa, to'g'ridan-to'g'ri dashboard.html ga yo'naltiriladi
+    window.location.href = "dashboard.html";
+  }
+});
