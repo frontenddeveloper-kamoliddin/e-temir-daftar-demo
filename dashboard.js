@@ -167,9 +167,9 @@ function renderDebtors(debtors) {
     } x ${d.price} so‘m)</div>
         <div class="text-xs text-gray-400">${d.note || ""}</div>
         <div class="mt-2 text-xs">
-          <span class="font-semibold">Umumiy qo‘shilgan: </span>${totalAdded} so‘m<br>
+          <span class="font-semibold">Umumiy qo‘shilgan: </span> ${totalAdd} so‘m<br>
           <span class="font-semibold">Ayirilgan: </span>${totalSub} so‘m<br>
-          <span class="font-semibold">Qolgan: </span>${totalDebt} so‘m
+          <span class="font-semibold">Qolgan: </span>${totalAdd - totalSub} so‘m
         </div>
       </div>
       <div class="flex gap-2">
