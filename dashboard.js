@@ -52,6 +52,21 @@ document.getElementById("logoutBtn").onclick = () => {
   signOut(auth).then(() => (window.location.href = "index.html"));
 };
 const debtorForm = document.getElementById("debtorForm");
+
+// Kod generatsiyasi va unikal bo‘lishini tekshirish
+function generateUniqueDebtorCode(existingCodes = []) {
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+  let code;
+  do {
+    code = '';
+    for (let i = 0; i < 8; i++) {
+      code += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+  } while (existingCodes.includes(code));
+  return code;
+}
+
+// Yangi qarzdor qo‘shishda kodni saqlash
 debtorForm.onsubmit = async (e) => {
   e.preventDefault();
   const name = document.getElementById("debtorName").value.trim();
@@ -75,6 +90,11 @@ debtorForm.onsubmit = async (e) => {
     alert("Bu ismli qarzdor allaqachon mavjud!");
     return;
   }
+
+  // Unikal kod generatsiya qilish
+  const existingCodes = snapshot.docs.map(doc => doc.data().code).filter(Boolean);
+  const code = generateUniqueDebtorCode(existingCodes);
+
   await addDoc(collection(db, "debtors"), {
     name,
     product,
@@ -82,6 +102,7 @@ debtorForm.onsubmit = async (e) => {
     price,
     note,
     userId: user.uid,
+    code, // kodni saqlash
     history: [
       {
         type: "add",
@@ -165,9 +186,8 @@ function renderDebtors(debtors) {
     card.innerHTML = `
       <div>
         <div class="font-bold text-lg">${d.name}</div>
-        <div class="text-sm text-gray-500 dark:text-gray-300">${d.product} (${
-      d.count
-    } x ${d.price} so‘m)</div>
+        <div class="text-xs text-gray-400 mb-1">Kod: <span class="font-mono">${d.code || ''}</span></div>
+        <div class="text-sm text-gray-500 dark:text-gray-300">${d.product} (${d.count} x ${d.price} so‘m)</div>
         <div class="text-xs text-gray-400">${d.note || ""}</div>
         <div class="mt-2 text-xs">
           <span class="font-semibold">Umumiy qo‘shilgan: </span> ${totalAdd} so‘m<br>
@@ -176,12 +196,8 @@ function renderDebtors(debtors) {
         </div>
       </div>
       <div class="flex gap-2">
-        <button class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded transition" data-id="${
-          d.id
-        }">Batafsil</button>
-        <button class="bg-red-500 hover:bg-red-600 text-white px-3 py-2 rounded transition" data-del="${
-          d.id
-        }">O‘chirish</button>
+        <button class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded transition" data-id="${d.id}">Batafsil</button>
+        <button class="bg-red-500 hover:bg-red-600 text-white px-3 py-2 rounded transition" data-del="${d.id}">O‘chirish</button>
       </div>
     `;
     card.querySelector("[data-id]").onclick = () => openDebtorModal(d);
@@ -523,7 +539,7 @@ document.getElementById('myDebtForm').onsubmit = function(e) {
     const list = document.getElementById('myDebtsList');
     const warn = document.createElement('div');
     warn.className = 'bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-300 rounded-lg p-3 mb-2 text-center font-semibold';
-    warn.innerText = 'Bu ismli qariz allaqachon mavjud!';
+    warn.innerText = 'Bu ismli qariz allaqon mavjud!';
     list.prepend(warn);
     setTimeout(() => warn.remove(), 2500);
     return;
@@ -554,3 +570,97 @@ document.getElementById('myDebtsList').onclick = function(e) {
     renderMyDebts();
   }
 };
+
+
+// Qarzdorlar massiviga kod qo‘shish (localStorage yoki massivga)
+function addDebtor(debtor) {
+  debtor.code = generateDebtorCode();
+  // ...debtorlarni saqlash logikasi...
+}
+
+// Cardda kodni ko‘rsatish (debtor.code)
+// <div>Kod: <span class="font-mono text-xs">{{debtor.code}}</span></div>
+
+// Qarzlar ko‘rish modalini ochish
+document.getElementById('viewDebtsBtn').onclick = () => {
+  document.getElementById('viewDebtsModal').classList.remove('hidden');
+};
+document.getElementById('closeViewDebtsModal').onclick = () => {
+  document.getElementById('viewDebtsModal').classList.add('hidden');
+};
+
+// Kod orqali qidirish
+document.getElementById('searchByCodeInput').addEventListener('input', async function() {
+  const code = this.value.trim().toUpperCase();
+  const user = auth.currentUser;
+  if (!user || code.length !== 8) {
+    document.getElementById('searchByCodeResult').innerHTML = '';
+    return;
+  }
+  const snapshot = await getDocs(collection(db, "debtors"));
+  let debtor = null;
+  snapshot.forEach((doc) => {
+    const data = doc.data();
+    if (data.userId === user.uid && data.code === code) {
+      debtor = { ...data, id: doc.id };
+    }
+  });
+
+  const resultDiv = document.getElementById('searchByCodeResult');
+  if (debtor) {
+    let totalAdd = 0, totalSub = 0;
+    (debtor.history || []).forEach(h => {
+      if (h.type === "add") totalAdd += h.amount || 0;
+      if (h.type === "sub") totalSub += h.amount || 0;
+    });
+    const totalDebt = totalAdd - totalSub;
+    const percent = totalAdd > 0 ? Math.round((totalDebt / totalAdd) * 100) : 0;
+
+    resultDiv.innerHTML = `
+      <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 mb-2 border border-gray-200 dark:border-gray-700">
+        <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-4">
+          <div>
+            <div class="text-lg font-bold text-blue-700 dark:text-blue-300 mb-1">${debtor.name}</div>
+            <div class="text-xs text-gray-400 mb-2">Kod: <span class="font-mono bg-gray-200 dark:bg-gray-700 px-2 py-1 rounded">${debtor.code}</span></div>
+            <div class="text-sm text-gray-600 dark:text-gray-300 mb-1">${debtor.product}</div>
+            <div class="text-xs text-gray-400">${debtor.note || ""}</div>
+            <div class="text-xs text-gray-400 mt-2">${debtor.history?.[0]?.date?.toDate ? debtor.history[0].date.toDate().toLocaleString('uz-UZ') : ''}</div>
+          </div>
+          <div class="flex flex-col gap-2 min-w-[140px]">
+            <span class="inline-block bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300 px-3 py-1 rounded-full text-xs font-semibold text-center">Qo‘shilgan: ${totalAdd} so‘m</span>
+            <span class="inline-block bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-300 px-3 py-1 rounded-full text-xs font-semibold text-center">Ayirilgan: ${totalSub} so‘m</span>
+            <span class="inline-block bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 px-3 py-1 rounded-full text-xs font-semibold text-center">Qarzdorlik: ${totalDebt} so‘m</span>
+          </div>
+        </div>
+        <div class="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-3 mt-2 mb-1">
+          <div class="bg-blue-500 h-3 rounded-full transition-all duration-500" style="width: ${percent < 0 ? 0 : percent > 100 ? 100 : percent}%;"></div>
+        </div>
+        <div class="text-xs text-gray-500 text-right mb-2">${percent}% qarzdorlik qoldi</div>
+        <button id="moveDebtorFirstBtn" class="w-full mt-2 bg-purple-500 hover:bg-purple-600 text-white px-4 py-2 rounded font-semibold transition">Qarzdorni ro‘yxatda birinchi qilish</button>
+      </div>
+    `;
+
+    // Button bosilganda shu qarzdorni birinchi qilib chiqarish
+    document.getElementById('moveDebtorFirstBtn').onclick = async () => {
+      // Barcha qarzdorlarni olamiz
+      const snapshot = await getDocs(collection(db, "debtors"));
+      let all = [];
+      snapshot.forEach((docu) => {
+        const data = docu.data();
+        if (data.userId === user.uid) all.push({ ...data, id: docu.id });
+      });
+      // Topilgan qarzdorni birinchi qilib massivni yangilaymiz
+      all = [debtor, ...all.filter(d => d.id !== debtor.id)];
+      // Ro‘yxatni yangilash uchun renderDebtors chaqiramiz
+      renderDebtors(all);
+      // Modalni yopmaslik uchun natijani ham yangilab turamiz
+      resultDiv.scrollIntoView({ behavior: "smooth" });
+    };
+  } else {
+    resultDiv.innerHTML = code.length === 8 ? `
+      <div class="bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-300 rounded-lg p-4 text-center font-semibold">
+        Qarzdor topilmadi
+      </div>
+    ` : '';
+  }
+});
