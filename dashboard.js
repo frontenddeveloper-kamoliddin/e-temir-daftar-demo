@@ -189,6 +189,7 @@ function renderDebtors(debtors) {
         <div class="text-xs text-gray-400 mb-1">Kod: <span class="font-mono">${d.code || ''}</span></div>
         <div class="text-sm text-gray-500 dark:text-gray-300">${d.product} (${d.count} x ${d.price} so‘m)</div>
         <div class="text-xs text-gray-400">${d.note || ""}</div>
+        ${d.moveComment ? `<div class="text-xs text-purple-600 dark:text-purple-300 mt-1">Izoh: ${d.moveComment}</div>` : ""}
         <div class="mt-2 text-xs">
           <span class="font-semibold">Umumiy qo‘shilgan: </span> ${totalAdd} so‘m<br>
           <span class="font-semibold">Ayirilgan: </span>${totalSub} so‘m<br>
@@ -636,23 +637,30 @@ document.getElementById('searchByCodeInput').addEventListener('input', async fun
           <div class="bg-blue-500 h-3 rounded-full transition-all duration-500" style="width: ${percent < 0 ? 0 : percent > 100 ? 100 : percent}%;"></div>
         </div>
         <div class="text-xs text-gray-500 text-right mb-2">${percent}% qarzdorlik qoldi</div>
-        <button id="moveDebtorFirstBtn" class="w-full mt-2 bg-purple-500 hover:bg-purple-600 text-white px-4 py-2 rounded font-semibold transition">Qarzdorni ro‘yxatda birinchi qilish</button>
+
       </div>
     `;
 
     // Button bosilganda shu qarzdorni birinchi qilib chiqarish
     document.getElementById('moveDebtorFirstBtn').onclick = async () => {
+      // Izoh (comment) olish uchun prompt ochamiz
+      const comment = prompt("Qarzdorni birinchi qilish uchun izoh kiriting (ixtiyoriy):") || "";
+
       // Barcha qarzdorlarni olamiz
       const snapshot = await getDocs(collection(db, "debtors"));
       let all = [];
       snapshot.forEach((docu) => {
         const data = docu.data();
-        if (data.userId === user.uid) all.push({ ...data, id: docu.id });
+        all.push({ ...data, id: docu.id });
       });
-      // Topilgan qarzdorni birinchi qilib massivni yangilaymiz
-      all = [debtor, ...all.filter(d => d.id !== debtor.id)];
+
+      // Topilgan qarzdorni birinchi qilib massivni yangilaymiz va unga comment qo‘shamiz
+      const debtorWithComment = { ...debtor, moveComment: comment };
+      all = [debtorWithComment, ...all.filter(d => d.id !== debtor.id)];
+
       // Ro‘yxatni yangilash uchun renderDebtors chaqiramiz
       renderDebtors(all);
+
       // Modalni yopmaslik uchun natijani ham yangilab turamiz
       resultDiv.scrollIntoView({ behavior: "smooth" });
     };
