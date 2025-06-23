@@ -342,23 +342,215 @@ function openDebtorModal(debtor) {
     debtorModal.classList.add("hidden");
   };
 }
-function renderDebtorsList(debtors) {
-  debtors.sort((a, b) =>
-    a.name.localeCompare(b.name, "uz", { sensitivity: "base" })
-  );
-  const list = document.getElementById("debtorsList");
-  list.innerHTML = "";
-  debtors.forEach((debtor) => {
-    const card = document.createElement("div");
-    card.className =
-      "bg-white dark:bg-gray-700 rounded-lg shadow p-4 flex justify-between items-center";
-    card.innerHTML = `
-      <div>
-        <div class="font-bold text-lg">${debtor.name}</div>
-        <div class="text-gray-500">${debtor.product}</div>
-      </div>
-      <button class="batafsil-btn bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded" data-id="${debtor.id}">Batafsil</button>
-    `;
-    list.appendChild(card);
-  });
+// Modal ochish/yopish
+const myDebtsBtn = document.getElementById('myDebtsBtn');
+const myDebtsModal = document.getElementById('myDebtsModal');
+const closeMyDebtsModal = document.getElementById('closeMyDebtsModal');
+myDebtsBtn.onclick = () => myDebtsModal.classList.remove('hidden');
+closeMyDebtsModal.onclick = () => myDebtsModal.classList.add('hidden');
+
+let myDebts = JSON.parse(localStorage.getItem('myDebts') || '[]');
+let actionState = { idx: null, type: null }; // {idx, type: 'add'|'sub'|'delete'}
+
+// Har bir qarz uchun tarixni saqlash
+// { name, amount, note, time, history: [{type, amount, note, time}] }
+
+function renderMyDebts() {
+  const list = document.getElementById('myDebtsList');
+  list.innerHTML = '';
+  const search = document.getElementById("searchInput").value.toLowerCase();
+  myDebts
+    .filter(debt => debt.name.toLowerCase().includes(search))
+    .forEach((debt, idx) => {
+      // Tarixlar uchun cardlar
+      let historyHtml = '';
+      if (Array.isArray(debt.history)) {
+        debt.history.slice().reverse().forEach(h => {
+          historyHtml += `
+            <div class="rounded-lg p-3 mb-2 shadow text-sm
+              ${h.type === 'add' ? 'bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200' : 'bg-yellow-100 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-200'}">
+              <b>${h.type === 'add' ? '+ ' : '- '}${h.amount} so‘m</b>
+              <span class="ml-2">${h.note ? h.note : ''}</span>
+              <span class="block text-xs text-gray-400">${h.time}</span>
+            </div>
+          `;
+        });
+      }
+
+      const card = document.createElement('div');
+      card.className = 'bg-gradient-to-br from-gray-50 to-gray-200 dark:from-gray-800 dark:to-gray-700 rounded-2xl p-4 flex flex-col gap-2 shadow-lg relative border border-gray-200 dark:border-gray-600';
+      card.innerHTML = `
+        <div class="flex justify-between items-center">
+          <div>
+            <div class="font-bold text-blue-700 dark:text-blue-300 text-lg">${debt.name}</div>
+            <div class="text-xl font-bold text-green-600 dark:text-green-400">${debt.amount} so‘m</div>
+            <div class="text-xs text-gray-500">${debt.note || ''}</div>
+            <div class="text-xs text-gray-400">${debt.time}</div>
+          </div>
+          <div class="flex flex-col gap-2">
+            <button class="qarizlarim-btn bg-blue-500 hover:bg-blue-600 text-white px-2 py-1 rounded text-xs" data-idx="${idx}">Qarizlarim</button>
+            <button class="delete-debt-btn bg-red-500 hover:bg-red-600 text-white px-2 py-1 rounded text-xs" data-idx="${idx}">O‘chirish</button>
+          </div>
+        </div>
+        <div class="flex gap-2 mt-2">
+          <button class="add-amount-btn bg-green-500 hover:bg-green-600 text-white px-2 py-1 rounded text-xs" data-idx="${idx}">Qariz qo‘shish</button>
+          <button class="subtract-amount-btn bg-yellow-500 hover:bg-yellow-600 text-white px-2 py-1 rounded text-xs" data-idx="${idx}">Qariz ayirish</button>
+        </div>
+        <div class="action-area mt-2"></div>
+        <div class="mt-3">${historyHtml || '<div class="text-xs text-gray-400">Tarix yo‘q</div>'}</div>
+      `;
+      list.appendChild(card);
+
+      // Action area uchun interaktiv joy
+      const actionArea = card.querySelector('.action-area');
+      if (actionState.idx === idx && actionState.type === 'add') {
+        actionArea.innerHTML = `
+          <form class="flex flex-col md:flex-row gap-2 items-center">
+            <input type="number" min="1" class="p-3 text-base rounded border border-gray-300 dark:bg-gray-700 dark:border-gray-600 w-32" placeholder="Summa" required>
+            <input type="text" class="p-3 text-base rounded border border-gray-300 dark:bg-gray-700 dark:border-gray-600 flex-1" placeholder="Izoh (ixtiyoriy)">
+            <button type="submit" class="bg-green-500 hover:bg-green-600 text-white px-5 py-2 rounded text-base font-semibold">Qo‘shish</button>
+            <button type="button" class="cancel-btn text-gray-500 px-4 py-2 rounded text-base">Bekor</button>
+          </form>
+        `;
+        actionArea.querySelector('form').onsubmit = (e) => {
+          e.preventDefault();
+          const val = Number(actionArea.querySelector('input[type="number"]').value);
+          const note = actionArea.querySelector('input[type="text"]').value;
+          if (val > 0) {
+            debt.amount += val;
+            debt.time = new Date().toLocaleString('uz-UZ', { hour12: false });
+            if (!Array.isArray(debt.history)) debt.history = [];
+            debt.history.push({
+              type: 'add',
+              amount: val,
+              note,
+              time: debt.time
+            });
+            localStorage.setItem('myDebts', JSON.stringify(myDebts));
+            actionState = { idx: null, type: null };
+            renderMyDebts();
+          }
+        };
+        actionArea.querySelector('.cancel-btn').onclick = () => {
+          actionState = { idx: null, type: null };
+          renderMyDebts();
+        };
+      }
+      if (actionState.idx === idx && actionState.type === 'sub') {
+        actionArea.innerHTML = `
+          <form class="flex flex-col md:flex-row gap-2 items-center">
+            <input type="number" min="1" class="p-3 text-base rounded border border-gray-300 dark:bg-gray-700 dark:border-gray-600 w-32" placeholder="Summa" required>
+            <input type="text" class="p-3 text-base rounded border border-gray-300 dark:bg-gray-700 dark:border-gray-600 flex-1" placeholder="Izoh (ixtiyoriy)">
+            <button type="submit" class="bg-yellow-500 hover:bg-yellow-600 text-white px-5 py-2 rounded text-base font-semibold">Ayirish</button>
+            <button type="button" class="cancel-btn text-gray-500 px-4 py-2 rounded text-base">Bekor</button>
+          </form>
+        `;
+        actionArea.querySelector('form').onsubmit = (e) => {
+          e.preventDefault();
+          const val = Number(actionArea.querySelector('input[type="number"]').value);
+          const note = actionArea.querySelector('input[type="text"]').value;
+          if (val > 0) {
+            debt.amount -= val;
+            debt.time = new Date().toLocaleString('uz-UZ', { hour12: false });
+            if (!Array.isArray(debt.history)) debt.history = [];
+            debt.history.push({
+              type: 'sub',
+              amount: val,
+              note,
+              time: debt.time
+            });
+            localStorage.setItem('myDebts', JSON.stringify(myDebts));
+            actionState = { idx: null, type: null };
+            renderMyDebts();
+          }
+        };
+        actionArea.querySelector('.cancel-btn').onclick = () => {
+          actionState = { idx: null, type: null };
+          renderMyDebts();
+        };
+      }
+      if (actionState.idx === idx && actionState.type === 'delete') {
+        actionArea.innerHTML = `
+          <div class="flex items-center gap-2 bg-red-50 dark:bg-red-900 border border-red-300 dark:border-red-700 rounded-xl p-4 text-base shadow-lg">
+            <span class="text-sm md:text-base text-gray-700 dark:text-gray-200 font-semibold flex-1">O‘chirishni xohlaysizmi?</span>
+            <button class="confirm-delete-btn bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded text-sm md:text-base">Ha</button>
+            <button class="cancel-btn text-gray-500 px-3 py-2 rounded text-sm md:text-base bg-gray-200 dark:bg-gray-700">Yo‘q</button>
+          </div>
+        `;
+        actionArea.querySelector('.confirm-delete-btn').onclick = () => {
+          myDebts.splice(idx, 1);
+          localStorage.setItem('myDebts', JSON.stringify(myDebts));
+          actionState = { idx: null, type: null };
+          renderMyDebts();
+        };
+        actionArea.querySelector('.cancel-btn').onclick = () => {
+          actionState = { idx: null, type: null };
+          renderMyDebts();
+        };
+      }
+      if (actionState.idx === idx && actionState.type === 'qarizlarim') {
+        actionArea.innerHTML = `
+          <div class="bg-white dark:bg-gray-800 rounded-lg p-3 border border-gray-200 dark:border-gray-600 shadow text-sm">
+            <div><b>Qariz bergan:</b> ${debt.name}</div>
+            <div><b>Summa:</b> ${debt.amount} so‘m</div>
+            <div><b>Izoh:</b> ${debt.note || '-'}</div>
+            <div><b>Vaqti:</b> ${debt.time}</div>
+            <button class="cancel-btn mt-2 bg-blue-100 hover:bg-blue-200 dark:bg-blue-900 dark:hover:bg-blue-800 text-blue-700 dark:text-blue-200 px-3 py-1 rounded text-xs">Yopish</button>
+          </div>
+        `;
+        actionArea.querySelector('.cancel-btn').onclick = () => {
+          actionState = { idx: null, type: null };
+          renderMyDebts();
+        };
+      }
+    });
 }
+renderMyDebts();
+
+document.getElementById('myDebtForm').onsubmit = function(e) {
+  e.preventDefault();
+  const name = document.getElementById('creditorName').value.trim();
+  const amount = Number(document.getElementById('creditorAmount').value);
+  const note = document.getElementById('creditorNote').value;
+  const time = new Date().toLocaleString('uz-UZ', { hour12: false });
+
+  // Bir xil ismni tekshirish (case-insensitive)
+  const exists = myDebts.some(
+    (d) => d.name.trim().toLowerCase() === name.toLowerCase()
+  );
+  if (exists) {
+    // Card ichida xabar chiqarish
+    const list = document.getElementById('myDebtsList');
+    const warn = document.createElement('div');
+    warn.className = 'bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-300 rounded-lg p-3 mb-2 text-center font-semibold';
+    warn.innerText = 'Bu ismli qariz allaqachon mavjud!';
+    list.prepend(warn);
+    setTimeout(() => warn.remove(), 2500);
+    return;
+  }
+
+  myDebts.unshift({ name, amount, note, time });
+  localStorage.setItem('myDebts', JSON.stringify(myDebts));
+  renderMyDebts();
+  this.reset();
+};
+
+document.getElementById('myDebtsList').onclick = function(e) {
+  const idx = e.target.dataset.idx;
+  if (e.target.classList.contains('add-amount-btn')) {
+    actionState = { idx: Number(idx), type: 'add' };
+    renderMyDebts();
+  }
+  if (e.target.classList.contains('subtract-amount-btn')) {
+    actionState = { idx: Number(idx), type: 'sub' };
+    renderMyDebts();
+  }
+  if (e.target.classList.contains('delete-debt-btn')) {
+    actionState = { idx: Number(idx), type: 'delete' };
+    renderMyDebts();
+  }
+  if (e.target.classList.contains('qarizlarim-btn')) {
+    actionState = { idx: Number(idx), type: 'qarizlarim' };
+    renderMyDebts();
+  }
+};
