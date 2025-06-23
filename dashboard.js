@@ -601,7 +601,7 @@ document.getElementById('searchByCodeInput').addEventListener('input', async fun
   let debtor = null;
   snapshot.forEach((doc) => {
     const data = doc.data();
-    if (data.userId === user.uid && data.code === code) {
+    if (data.code === code) { // Faqat kod bo‘yicha qidiradi, userId tekshirilmaydi
       debtor = { ...data, id: doc.id };
     }
   });
