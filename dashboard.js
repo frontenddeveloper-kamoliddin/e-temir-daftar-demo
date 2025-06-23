@@ -590,7 +590,43 @@ document.getElementById('closeViewDebtsModal').onclick = () => {
   document.getElementById('viewDebtsModal').classList.add('hidden');
 };
 
-// Kod orqali qidirish
+// Qidirilgan kodlarni saqlash va ko‘rsatish
+const searchedCodesKey = 'searchedDebtorCodes';
+function saveSearchedCode(code, name) {
+  let arr = JSON.parse(localStorage.getItem(searchedCodesKey) || '[]');
+  // Takrorlanmasin
+  if (!arr.some(item => item.code === code)) {
+    arr.unshift({ code, name });
+    // Faqat oxirgi 10 ta kodni saqlash
+    arr = arr.slice(0, 10);
+    localStorage.setItem(searchedCodesKey, JSON.stringify(arr));
+    renderSearchedCodes();
+  }
+}
+function renderSearchedCodes() {
+  const wrap = document.getElementById('searchedCodesWrap');
+  if (!wrap) return;
+  const arr = JSON.parse(localStorage.getItem(searchedCodesKey) || '[]');
+  wrap.innerHTML = arr.map(item => `
+    <button class="searched-code-btn bg-gray-100 dark:bg-gray-700 hover:bg-blue-100 dark:hover:bg-blue-800 text-xs font-mono rounded px-3 py-1 m-1 border border-gray-300 dark:border-gray-600 transition"
+      data-code="${item.code}">
+      ${item.code} <span class="ml-2 text-gray-500">(${item.name})</span>
+    </button>
+  `).join('');
+}
+renderSearchedCodes();
+
+// Kod tugmasini bosganda inputga joylash va qidiruvni ishga tushirish
+document.getElementById('searchedCodesWrap')?.addEventListener('click', function(e) {
+  if (e.target.closest('.searched-code-btn')) {
+    const code = e.target.closest('.searched-code-btn').dataset.code;
+    const input = document.getElementById('searchByCodeInput');
+    input.value = code;
+    input.dispatchEvent(new Event('input'));
+  }
+});
+
+// Kod orqali qidirish funksiyasini yangilash
 document.getElementById('searchByCodeInput').addEventListener('input', async function() {
   const code = this.value.trim().toUpperCase();
   const user = auth.currentUser;
@@ -602,13 +638,16 @@ document.getElementById('searchByCodeInput').addEventListener('input', async fun
   let debtor = null;
   snapshot.forEach((doc) => {
     const data = doc.data();
-    if (data.code === code) { // Faqat kod bo‘yicha qidiradi, userId tekshirilmaydi
+    if (data.code === code) {
       debtor = { ...data, id: doc.id };
     }
   });
 
   const resultDiv = document.getElementById('searchByCodeResult');
   if (debtor) {
+    // Qidirilgan kodni va ismni saqlash
+    saveSearchedCode(debtor.code, debtor.name);
+
     let totalAdd = 0, totalSub = 0;
     (debtor.history || []).forEach(h => {
       if (h.type === "add") totalAdd += h.amount || 0;
@@ -637,33 +676,8 @@ document.getElementById('searchByCodeInput').addEventListener('input', async fun
           <div class="bg-blue-500 h-3 rounded-full transition-all duration-500" style="width: ${percent < 0 ? 0 : percent > 100 ? 100 : percent}%;"></div>
         </div>
         <div class="text-xs text-gray-500 text-right mb-2">${percent}% qarzdorlik qoldi</div>
-
       </div>
     `;
-
-    // Button bosilganda shu qarzdorni birinchi qilib chiqarish
-    document.getElementById('moveDebtorFirstBtn').onclick = async () => {
-      // Izoh (comment) olish uchun prompt ochamiz
-      const comment = prompt("Qarzdorni birinchi qilish uchun izoh kiriting (ixtiyoriy):") || "";
-
-      // Barcha qarzdorlarni olamiz
-      const snapshot = await getDocs(collection(db, "debtors"));
-      let all = [];
-      snapshot.forEach((docu) => {
-        const data = docu.data();
-        all.push({ ...data, id: docu.id });
-      });
-
-      // Topilgan qarzdorni birinchi qilib massivni yangilaymiz va unga comment qo‘shamiz
-      const debtorWithComment = { ...debtor, moveComment: comment };
-      all = [debtorWithComment, ...all.filter(d => d.id !== debtor.id)];
-
-      // Ro‘yxatni yangilash uchun renderDebtors chaqiramiz
-      renderDebtors(all);
-
-      // Modalni yopmaslik uchun natijani ham yangilab turamiz
-      resultDiv.scrollIntoView({ behavior: "smooth" });
-    };
   } else {
     resultDiv.innerHTML = code.length === 8 ? `
       <div class="bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-300 rounded-lg p-4 text-center font-semibold">
@@ -671,4 +685,9 @@ document.getElementById('searchByCodeInput').addEventListener('input', async fun
       </div>
     ` : '';
   }
+  // Qidirilgan kodlar ro‘yxatini yangilash
+  renderSearchedCodes();
 });
+
+// HTML ga joylash (searchByCodeInput pastiga qo‘ying):
+// <div id="searchedCodesWrap" class="flex flex-wrap mt-2"></div>
