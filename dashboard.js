@@ -289,7 +289,6 @@ function openDebtorModal(debtor) {
           <input type="number" min="1" placeholder="Qarz ayirish (so‘m)" class="flex-1 p-2 border border-gray-300 rounded dark:bg-gray-700 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-red-400 text-gray-900 dark:text-gray-100" required>
           <button type="submit" class="bg-red-500 hover:bg-red-600 text-white px-3 py-2 rounded">Ayirish</button>
         </form>
-        <button id="finishDebt" class="w-full bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded mt-2">Qarzni tugatish</button>
       </div>
       <div class="flex-1">
         <div class="font-bold mb-2">Qo‘shilganlar</div>
@@ -310,6 +309,11 @@ function openDebtorModal(debtor) {
 
   modalContent.querySelector("#addDebtForm").onsubmit = async (e) => {
     e.preventDefault();
+    if (!(await showConfirmDiv("Qo‘shaveraymi?"))) return;
+    // Inputlarni yashirish
+    Array.from(e.target.elements).forEach(el => {
+      if (el.tagName === "INPUT" || el.tagName === "BUTTON") el.style.display = "none";
+    });
     const product = e.target[0].value.trim();
     const count = parseInt(e.target[1].value);
     const price = parseInt(e.target[2].value);
@@ -336,6 +340,11 @@ function openDebtorModal(debtor) {
   };
   modalContent.querySelector("#subDebtForm").onsubmit = async (e) => {
     e.preventDefault();
+    if (!(await showConfirmDiv("Ayiraveraymi?"))) return;
+    // Inputlarni yashirish
+    Array.from(e.target.elements).forEach(el => {
+      if (el.tagName === "INPUT" || el.tagName === "BUTTON") el.style.display = "none";
+    });
     const val = parseInt(e.target[0].value);
     if (!val) return;
     const ref = doc(db, "debtors", debtor.id);
@@ -351,12 +360,6 @@ function openDebtorModal(debtor) {
       .data();
     openDebtorModal({ ...updated, id: debtor.id });
     loadDebtors();
-  };
-  modalContent.querySelector("#finishDebt").onclick = async () => {
-    const ref = doc(db, "debtors", debtor.id);
-    await updateDoc(ref, { history: [] });
-    loadDebtors();
-    debtorModal.classList.add("hidden");
   };
 }
 // Modal ochish/yopish
@@ -691,3 +694,109 @@ document.getElementById('searchByCodeInput').addEventListener('input', async fun
 
 // HTML ga joylash (searchByCodeInput pastiga qo‘ying):
 // <div id="searchedCodesWrap" class="flex flex-wrap mt-2"></div>
+
+// Misol uchun, qo‘shish tugmasi uchun:
+document.addEventListener('click', function(e) {
+  if (e.target.classList.contains('add-debt-btn')) {
+    if (confirm("Qo‘shaveraymi?")) {
+      // Qo‘shish funksiyasini chaqiring
+      addDebtFunction();
+    }
+  }
+  if (e.target.classList.contains('subtract-debt-btn')) {
+    if (confirm("Ayiraveraymi?")) {
+      // Ayirish funksiyasini chaqiring
+      subtractDebtFunction();
+    }
+  }
+});
+/**
+ * Divda custom confirm oynasi ko‘rsatadi.
+ * @param {string} message - So‘rov matni
+ * @returns {Promise<boolean>} - Ha bosilsa true, Yo‘q bosilsa false
+ */
+function showConfirmDiv(message) {
+  return new Promise((resolve) => {
+    // Eski confirmni o‘chir
+    document.getElementById('customConfirmDiv')?.remove();
+
+    const div = document.createElement('div');
+    div.id = 'customConfirmDiv';
+    div.className = 'fixed inset-0 z-[100] flex items-center justify-center bg-black bg-opacity-40';
+    div.innerHTML = `
+      <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 w-full max-w-xs text-center border border-gray-300 dark:border-gray-700">
+        <div class="mb-4 font-bold text-lg">${message}</div>
+        <div class="flex gap-2 justify-center">
+          <button id="confirmYes" class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded">Ha</button>
+          <button id="confirmNo" class="bg-gray-300 dark:bg-gray-600 text-gray-800 dark:text-gray-100 px-4 py-2 rounded">Yo‘q</button>
+        </div>
+      </div>
+    `;
+    document.body.appendChild(div);
+    div.querySelector('#confirmYes').onclick = () => {
+      div.remove();
+      resolve(true);
+    };
+    div.querySelector('#confirmNo').onclick = () => {
+      div.remove();
+      resolve(false);
+    };
+  });
+}
+
+// --- MODALDA QO‘SHISH/AYIRISHDA FOYDALANISH ---
+modalContent.querySelector("#addDebtForm").onsubmit = async (e) => {
+  e.preventDefault();
+  if (!(await showConfirmDiv("Qo‘shaveraymi?"))) return;
+  // Inputlarni yashirish
+  Array.from(e.target.elements).forEach(el => {
+    if (el.tagName === "INPUT" || el.tagName === "BUTTON") el.style.display = "none";
+  });
+  const product = e.target[0].value.trim();
+  const count = parseInt(e.target[1].value);
+  const price = parseInt(e.target[2].value);
+  const note = e.target[3].value.trim();
+  if (!product || !count || !price) return;
+  const amount = count * price;
+  const ref = doc(db, "debtors", debtor.id);
+  await updateDoc(ref, {
+    history: arrayUnion({
+      type: "add",
+      amount,
+      count,
+      price,
+      product,
+      note,
+      date: Timestamp.now(),
+    }),
+  });
+  const updated = (await getDocs(collection(db, "debtors"))).docs
+    .find((docu) => docu.id === debtor.id)
+    .data();
+  openDebtorModal({ ...updated, id: debtor.id });
+  loadDebtors();
+};
+
+modalContent.querySelector("#subDebtForm").onsubmit = async (e) => {
+  e.preventDefault();
+  if (!(await showConfirmDiv("Ayiraveraymi?"))) return;
+  // Inputlarni yashirish
+  Array.from(e.target.elements).forEach(el => {
+    if (el.tagName === "INPUT" || el.tagName === "BUTTON") el.style.display = "none";
+  });
+  const val = parseInt(e.target[0].value);
+  if (!val) return;
+  const ref = doc(db, "debtors", debtor.id);
+  await updateDoc(ref, {
+    history: arrayUnion({
+      type: "sub",
+      amount: val,
+      date: Timestamp.now(),
+    }),
+  });
+  const updated = (await getDocs(collection(db, "debtors"))).docs
+    .find((docu) => docu.id === debtor.id)
+    .data();
+  openDebtorModal({ ...updated, id: debtor.id });
+  loadDebtors();
+};
