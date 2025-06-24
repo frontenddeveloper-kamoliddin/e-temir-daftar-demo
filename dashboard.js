@@ -652,9 +652,28 @@ document.getElementById('searchByCodeInput').addEventListener('input', async fun
     saveSearchedCode(debtor.code, debtor.name);
 
     let totalAdd = 0, totalSub = 0;
+    let addHistory = '', subHistory = '';
     (debtor.history || []).forEach(h => {
-      if (h.type === "add") totalAdd += h.amount || 0;
-      if (h.type === "sub") totalSub += h.amount || 0;
+      const date = h.date?.toDate ? h.date.toDate() : new Date();
+      const time = date.toLocaleString("uz-UZ");
+      if (h.type === "add") {
+        totalAdd += h.amount || 0;
+        addHistory += `
+          <div class="rounded bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200 p-2 mb-1 text-xs">
+          +${h.amount} so‘m <span class="ml-2">${h.note || ''}</span>
+          <span class="block text-gray-400">${time}</span>
+        </div>
+        `;
+      }
+      if (h.type === "sub") {
+        totalSub += h.amount || 0;
+        subHistory += `
+          <div class="rounded bg-yellow-100 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-200 p-2 mb-1 text-xs">
+          -${h.amount} so‘m <span class="ml-2">${h.note || ''}</span>
+          <span class="block text-gray-400">${time}</span>
+        </div>
+        `;
+      }
     });
     const totalDebt = totalAdd - totalSub;
     const percent = totalAdd > 0 ? Math.round((totalDebt / totalAdd) * 100) : 0;
@@ -679,8 +698,34 @@ document.getElementById('searchByCodeInput').addEventListener('input', async fun
           <div class="bg-blue-500 h-3 rounded-full transition-all duration-500" style="width: ${percent < 0 ? 0 : percent > 100 ? 100 : percent}%;"></div>
         </div>
         <div class="text-xs text-gray-500 text-right mb-2">${percent}% qarzdorlik qoldi</div>
+        <button id="toggleHistoryBtn" class="mt-3 mb-2 bg-purple-500 hover:bg-purple-600 text-white px-4 py-2 rounded transition-all">Tarix</button>
+        <div id="historyCollapse" class="overflow-hidden transition-all duration-500 max-h-0 opacity-0">
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+            <div>
+              <div class="font-bold mb-1 text-green-700 dark:text-green-300">Qo‘shilganlar</div>
+              ${addHistory || '<div class="text-gray-400 text-xs">Yo‘q</div>'}
+            </div>
+            <div>
+              <div class="font-bold mb-1 text-yellow-700 dark:text-yellow-300">Ayirilganlar</div>
+              ${subHistory || '<div class="text-gray-400 text-xs">Yo‘q</div>'}
+            </div>
+          </div>
+        </div>
       </div>
     `;
+
+    // Animation va toggle uchun:
+    const btn = document.getElementById('toggleHistoryBtn');
+    const collapse = document.getElementById('historyCollapse');
+    btn.onclick = () => {
+      if (collapse.style.maxHeight && collapse.style.maxHeight !== '0px') {
+        collapse.style.maxHeight = '0px';
+        collapse.style.opacity = '0';
+      } else {
+        collapse.style.maxHeight = collapse.scrollHeight + 'px';
+        collapse.style.opacity = '1';
+      }
+    };
   } else {
     resultDiv.innerHTML = code.length === 8 ? `
       <div class="bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-300 rounded-lg p-4 text-center font-semibold">
@@ -800,3 +845,91 @@ modalContent.querySelector("#subDebtForm").onsubmit = async (e) => {
   openDebtorModal({ ...updated, id: debtor.id });
   loadDebtors();
 };
+
+function renderViewDebts() {
+  const list = document.getElementById('viewDebtsList');
+  list.innerHTML = '';
+  const search = document.getElementById("searchInput").value.toLowerCase();
+  let debts = JSON.parse(localStorage.getItem('myDebts') || '[]');
+  debts = debts.filter(debt => debt.name.toLowerCase().includes(search));
+  if (debts.length === 0) {
+    list.innerHTML = `<div class="text-center text-gray-500 dark:text-gray-400">Qarz topilmadi</div>`;
+    return;
+  }
+  debts.forEach((debt, idx) => {
+    // Tarixlar uchun cardlar
+    let historyHtml = '';
+    let totalAdd = 0, totalSub = 0;
+    if (Array.isArray(debt.history)) {
+      debt.history.forEach(h => {
+        if (h.type === 'add') totalAdd += h.amount;
+        if (h.type === 'sub') totalSub += h.amount;
+        historyHtml += `
+          <div class="rounded-lg p-3 mb-2 shadow text-sm
+            ${h.type === 'add' ? 'bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200' : 'bg-yellow-100 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-200'}">
+            <b>${h.type === 'add' ? '+ ' : '- '}${h.amount} so‘m</b>
+            <span class="ml-2">${h.note ? h.note : ''}</span>
+            <span class="block text-xs text-gray-400">${h.time || ''}</span>
+          </div>
+        `;
+      });
+    }
+    const card = document.createElement('div');
+    card.className = 'bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-6 mb-6 border-2 border-purple-500 flex flex-col gap-3';
+    card.innerHTML = `
+      <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+        <div>
+          <div class="text-2xl font-bold text-blue-700 dark:text-blue-300 mb-1">${debt.name}</div>
+          <div class="text-xl font-bold text-green-600 dark:text-green-400 mb-1">${debt.amount} so‘m</div>
+          <div class="text-xs text-gray-500 mb-1">${debt.note || ''}</div>
+          <div class="text-xs text-gray-400 mb-2">${debt.time}</div>
+          <div class="mb-2 text-base text-gray-700 dark:text-gray-200"><b>Kimdan olgan:</b> ${debt.from || '-'}</div>
+          <div class="mb-2 text-sm text-gray-700 dark:text-gray-200">
+            <b>Jami qo‘shilgan:</b> ${totalAdd} so‘m<br>
+            <b>Jami ayirilgan:</b> ${totalSub} so‘m<br>
+            <b>Qolgan:</b> ${debt.amount} so‘m
+          </div>
+        </div>
+        <div class="flex flex-col gap-2 min-w-[120px]">
+          <button class="view-debt-btn bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded" data-idx="${idx}">Ko‘rish</button>
+          <button class="delete-debt-btn bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded" data-idx="${idx}">O‘chirish</button>
+        </div>
+      </div>
+      <div class="mt-3">${historyHtml || '<div class="text-xs text-gray-400">Tarix yo‘q</div>'}</div>
+    `;
+    list.appendChild(card);
+
+    // Ko‘rish tugmasi
+    card.querySelector('.view-debt-btn').onclick = () => {
+      alert(
+        `Kimdan: ${debt.from || '-'}\nIsm: ${debt.name}\nSumma: ${debt.amount} so‘m\nIzoh: ${debt.note || '-'}\nVaqti: ${debt.time}`
+      );
+    };
+
+    // O‘chirish tugmasi
+    card.querySelector('.delete-debt-btn').onclick = () => {
+      if (confirm("O‘chirishni xohlaysizmi?")) {
+        debts.splice(idx, 1);
+        localStorage.setItem('myDebts', JSON.stringify(debts));
+        renderViewDebts();
+      }
+    };
+  });
+}
+
+// Modal ochilganda chaqiring:
+document.getElementById('viewDebtsBtn').onclick = () => {
+  document.getElementById('viewDebtsModal').classList.remove('hidden');
+  renderViewDebts();
+};
+document.getElementById('closeViewDebtsModal').onclick = () => {
+  document.getElementById('viewDebtsModal').classList.add('hidden');
+};
+
+document.getElementById("viewDebtsModal").innerHTML = `
+  <div class="bg-white dark:bg-gray-900 rounded-xl shadow-xl p-6 w-full max-w-2xl relative">
+    <button id="closeViewDebtsModal" class="absolute top-2 right-2 text-2xl">&times;</button>
+    <h2 class="text-xl font-bold mb-4">Qarzlar ro‘yxati</h2>
+    <div id="viewDebtsList"></div>
+  </div>
+`;
