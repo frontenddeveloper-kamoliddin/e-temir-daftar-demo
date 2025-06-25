@@ -933,3 +933,26 @@ document.getElementById("viewDebtsModal").innerHTML = `
     <div id="viewDebtsList"></div>
   </div>
 `;
+
+window.addEventListener('DOMContentLoaded', () => {
+  // Foydalanuvchi ismi va random ID olish yoki yaratish
+  let userName = localStorage.getItem('userName');
+  let userId = localStorage.getItem('userId');
+
+  if (!userName) {
+    userName = prompt("Ismingizni kiriting:");
+    localStorage.setItem('userName', userName);
+  }
+  if (!userId) {
+    userId = Math.random().toString(36).substr(2, 8).toUpperCase();
+    localStorage.setItem('userId', userId);
+  }
+
+  // Menyuda ko‘rsatish
+  const userNameEl = document.getElementById('userName');
+  const userIdEl = document.getElementById('userId');
+  if (userNameEl && userIdEl) {
+    userNameEl.textContent = userName;
+    userIdEl.textContent = `ID: ${userId}`;
+  }
+});
