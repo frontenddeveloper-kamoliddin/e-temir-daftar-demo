@@ -153,6 +153,13 @@
     import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js";
     import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, updateProfile } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js";
 
+    // --- Yangi kod: Logout flag tekshiruvi ---
+    if (localStorage.getItem("loggedOut") !== "true") {
+      // Logout bosilmagan bo‘lsa, to‘g‘ridan-to‘g‘ri dashboardga yo‘naltiramiz
+      window.location.href = "dashboard.html";
+    }
+    // --- Yangi kod tugadi ---
+
     // Firebase konfiguratsiya
     const firebaseConfig = {
       apiKey: "AIzaSyACHEuejKVniBAcYExQxk23A9QD84bUaB4",
@@ -195,7 +202,10 @@
       const email = document.getElementById("loginEmail").value;
       const password = document.getElementById("loginPassword").value;
       signInWithEmailAndPassword(auth, email, password)
-        .then(() => window.location.href = "dashboard.html")
+        .then(() => {
+          localStorage.removeItem("loggedOut"); // Login bo‘lsa flagni o‘chir
+          window.location.href = "dashboard.html";
+        })
         .catch(err => loginError.innerText = err.message);
     };
 
@@ -212,10 +222,12 @@
       }
       createUserWithEmailAndPassword(auth, email, password)
         .then((userCredential) => {
-          
           return updateProfile(userCredential.user, { displayName: name });
         })
-        .then(() => window.location.href = "dashboard.html")
+        .then(() => {
+          localStorage.removeItem("loggedOut"); // Register bo‘lsa flagni o‘chir
+          window.location.href = "dashboard.html";
+        })
         .catch(err => registerError.innerText = err.message);
     };
   </script>
@@ -271,3 +283,12 @@
   </script>
 </body>
 </html>
+
+<script>
+  // Misol uchun dashboard.html faylida:
+  document.getElementById("logoutBtn").onclick = function() {
+    localStorage.setItem("loggedOut", "true");
+    // Firebase auth signOut ham chaqiling
+    // window.location.href = "index.html";
+  };
+</script>
