@@ -71,10 +71,27 @@ debtorForm.onsubmit = async (e) => {
   e.preventDefault();
   const name = document.getElementById("debtorName").value.trim();
   const product = document.getElementById("debtorProduct").value.trim();
-  const count = parseInt(document.getElementById("debtorCount").value);
-  const price = parseInt(document.getElementById("debtorPrice").value);
+  let count = parseInt(document.getElementById("debtorCount").value);
+  let price = parseInt(document.getElementById("debtorPrice").value);
   const note = document.getElementById("debtorNote").value.trim();
-  if (!name || !product || !count || !price) return;
+  if (!name || !price) return;
+
+  // Mahsulot narxi birinchi 1ga ko‘paytiriladi
+  price = price * 1;
+
+  // Mahsulot soni 0 yoki yo‘q bo‘lsa, mahsulot narxiga ko‘paytirilmaydi
+  let amount;
+  if (!count || count <= 0) {
+    count = 1;
+    amount = price;
+  } else {
+    amount = count * price;
+  }
+
+  if (price <= 0) {
+    price = 1;
+    amount = price;
+  }
 
   const user = auth.currentUser;
   if (!user) return;
@@ -106,7 +123,7 @@ debtorForm.onsubmit = async (e) => {
     history: [
       {
         type: "add",
-        amount: count * price,
+        amount,
         count,
         price,
         product,
@@ -278,15 +295,18 @@ function openDebtorModal(debtor) {
         } so‘m</span></div>
         <form id="addDebtForm" class="flex flex-col gap-2 mb-2">
           <div class="grid grid-cols-1 gap-2">
-            <input type="text" placeholder="Mahsulot nomi" class="p-2 border border-gray-300 rounded dark:bg-gray-700 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-green-400 text-gray-900 dark:text-gray-100" required>
-            <input type="number" min="1" placeholder="Mahsulot soni" class="p-2 border border-gray-300 rounded dark:bg-gray-700 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-green-400 text-gray-900 dark:text-gray-100" required>
+            <input type="text" placeholder="Mahsulot nomi" class="p-2 border border-gray-300 rounded dark:bg-gray-700 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-green-400 text-gray-900 dark:text-gray-100" >
+            <input type="number"  minlength="" placeholder="Mahsulot soni" class="p-2 border border-gray-300 rounded dark:bg-gray-700 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-green-400 text-gray-900 dark:text-gray-100" >
             <input type="number" min="1" placeholder="Mahsulot narxi" class="p-2 border border-gray-300 rounded dark:bg-gray-700 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-green-400 text-gray-900 dark:text-gray-100" required>
             <input type="text" placeholder="Izoh (ixtiyoriy)" class="p-2 border border-gray-300 rounded dark:bg-gray-700 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-green-400 text-gray-900 dark:text-gray-100">
           </div>
           <button type="submit" class="bg-green-500 hover:bg-green-600 text-white px-3 py-2 rounded">Qo‘shish</button>
         </form>
-        <form id="subDebtForm" class="flex gap-2 mb-2">
-          <input type="number" min="1" placeholder="Qarz ayirish (so‘m)" class="flex-1 p-2 border border-gray-300 rounded dark:bg-gray-700 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-red-400 text-gray-900 dark:text-gray-100" required>
+        <form id="subDebtForm" class="flex flex-col gap-2 mb-2">
+          <input type="number" min="1" placeholder="Qarz ayirish (so‘m)" 
+            class="p-2 border border-gray-300 rounded dark:bg-gray-700 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-red-400 text-gray-900 dark:text-gray-100" required>
+          <input type="text" placeholder="Izoh (ixtiyoriy)" 
+            class="p-2 border border-gray-300 rounded dark:bg-gray-700 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-red-400 text-gray-900 dark:text-gray-100">
           <button type="submit" class="bg-red-500 hover:bg-red-600 text-white px-3 py-2 rounded">Ayirish</button>
         </form>
       </div>
@@ -315,11 +335,30 @@ function openDebtorModal(debtor) {
       if (el.tagName === "INPUT" || el.tagName === "BUTTON") el.style.display = "none";
     });
     const product = e.target[0].value.trim();
-    const count = parseInt(e.target[1].value);
-    const price = parseInt(e.target[2].value);
+    let count = parseInt(e.target[1].value);
+    let price = parseInt(e.target[2].value);
     const note = e.target[3].value.trim();
-    if (!product || !count || !price) return;
-    const amount = count * price;
+
+    // Mahsulot narxi birinchi 1ga ko‘paytiriladi
+    price = price * 1;
+
+    // Mahsulot soni 0 yoki yo‘q bo‘lsa, mahsulot narxiga ko‘paytirilmaydi
+    let amount;
+    if (!count || count <= 0) {
+      count = 1;
+      amount = price;
+    } else {
+      amount = count * price;
+    }
+
+    if (price <= 0) {
+      price = 1;
+      amount = price;
+    }
+
+    // Mahsulot nomi va soni ixtiyoriy, faqat narx bo‘lsa yetarli
+    if (!price) return;
+
     const ref = doc(db, "debtors", debtor.id);
     await updateDoc(ref, {
       history: arrayUnion({
@@ -346,12 +385,14 @@ function openDebtorModal(debtor) {
       if (el.tagName === "INPUT" || el.tagName === "BUTTON") el.style.display = "none";
     });
     const val = parseInt(e.target[0].value);
+    const note = e.target[1].value.trim(); // Izoh inputini olish
     if (!val) return;
     const ref = doc(db, "debtors", debtor.id);
     await updateDoc(ref, {
       history: arrayUnion({
         type: "sub",
         amount: val,
+        note, // Izohni ham saqlash
         date: Timestamp.now(),
       }),
     });
@@ -855,11 +896,30 @@ modalContent.querySelector("#addDebtForm").onsubmit = async (e) => {
     if (el.tagName === "INPUT" || el.tagName === "BUTTON") el.style.display = "none";
   });
   const product = e.target[0].value.trim();
-  const count = parseInt(e.target[1].value);
-  const price = parseInt(e.target[2].value);
+  let count = parseInt(e.target[1].value);
+  let price = parseInt(e.target[2].value);
   const note = e.target[3].value.trim();
-  if (!product || !count || !price) return;
-  const amount = count * price;
+
+  // Mahsulot narxi birinchi 1ga ko‘paytiriladi
+  price = price * 1;
+
+  // Mahsulot soni 0 yoki yo‘q bo‘lsa, mahsulot narxiga ko‘paytirilmaydi
+  let amount;
+  if (!count || count <= 0) {
+    count = 1;
+    amount = price;
+  } else {
+    amount = count * price;
+  }
+
+  if (price <= 0) {
+    price = 1;
+    amount = price;
+  }
+
+  // Mahsulot nomi va soni ixtiyoriy, faqat narx bo‘lsa yetarli
+  if (!price) return;
+
   const ref = doc(db, "debtors", debtor.id);
   await updateDoc(ref, {
     history: arrayUnion({
@@ -887,12 +947,14 @@ modalContent.querySelector("#subDebtForm").onsubmit = async (e) => {
     if (el.tagName === "INPUT" || el.tagName === "BUTTON") el.style.display = "none";
   });
   const val = parseInt(e.target[0].value);
+  const note = e.target[1].value.trim(); // Izoh inputini olish
   if (!val) return;
   const ref = doc(db, "debtors", debtor.id);
   await updateDoc(ref, {
     history: arrayUnion({
       type: "sub",
       amount: val,
+      note, // Izohni ham saqlash
       date: Timestamp.now(),
     }),
   });

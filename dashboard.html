@@ -52,10 +52,11 @@
     <form id="debtorForm" class="w-full max-w-3xl bg-white dark:bg-gray-800 rounded-lg shadow-lg p-4 mb-6 space-y-4">
       <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
         <input id="debtorName" type="text" placeholder="Ism" required class="p-3 border border-gray-300 rounded dark:bg-gray-700 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-400 text-gray-900 dark:text-gray-100">
-        <input id="debtorProduct" type="text" placeholder="Mahsulot nomi" required class="p-3 border border-gray-300 rounded dark:bg-gray-700 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-400 text-gray-900 dark:text-gray-100">
-        <input id="debtorCount" type="number" min="1" placeholder="Mahsulot soni" required class="p-3 border border-gray-300 rounded dark:bg-gray-700 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-400 text-gray-900 dark:text-gray-100">
+        <input id="debtorProduct" type="text" placeholder="Mahsulot nomi"  class="p-3 border border-gray-300 rounded dark:bg-gray-700 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-400 text-gray-900 dark:text-gray-100">
+        <input id="debtorCount" type="number" minlength=""  placeholder="Mahsulot soni"  class="p-3 border border-gray-300 rounded dark:bg-gray-700 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-400 text-gray-900 dark:text-gray-100">
         <input id="debtorPrice" type="number" min="1" placeholder="Mahsulot narxi" required class="p-3 border border-gray-300 rounded dark:bg-gray-700 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-400 text-gray-900 dark:text-gray-100">
       </div>
+      
       <input id="debtorNote" type="text" placeholder="Qo'shimcha izoh (ixtiyoriy)" class="w-full p-3 border border-gray-300 rounded dark:bg-gray-700 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-400 text-gray-900 dark:text-gray-100">
       <button type="submit" class="w-full bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded transition">Qarzdor qo'shish</button>
     </form>
