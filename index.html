@@ -123,6 +123,34 @@
         font-size: 1.2rem;
       }
     }
+    .password-wrapper {
+      position: relative;
+      width: 100%;
+      display: flex;
+      align-items: center;
+    }
+    .password-wrapper input[type="password"],
+    .password-wrapper input[type="text"] {
+      width: 100%;
+      padding-right: 2.5em;
+      box-sizing: border-box;
+      margin-bottom: 0;
+    }
+    .toggle-password {
+      position: absolute;
+      right: 0.7em;
+      top: 50%;
+      transform: translateY(-50%);
+      cursor: pointer;
+      font-size: 1.4em;
+      color: #8b5cf6;
+      display: flex;
+      align-items: center;
+      background: transparent;
+      border: none;
+      padding: 0;
+      z-index: 2;
+    }
   </style>
 </head>
 <body>
@@ -132,7 +160,13 @@
     <form class="form-box" id="loginForm" autocomplete="off">
       <div class="form-title">Login</div>
       <input type="email" id="loginEmail" placeholder="Email" required autocomplete="username" />
-      <input type="password" id="loginPassword" placeholder="Password" required autocomplete="current-password" />
+      <div class="password-wrapper">
+        <input type="password" id="loginPassword" placeholder="Password" required autocomplete="current-password" />
+        <span class="toggle-password" id="toggleLoginPassword">
+          <svg id="loginEyeOpen" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" stroke="#8b5cf6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-eye"><circle cx="12" cy="12" r="3"/><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"/></svg>
+          <svg id="loginEyeClosed" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" stroke="#8b5cf6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-eye-off" style="display:none;"><path d="M17.94 17.94A10.94 10.94 0 0 1 12 19c-7 0-11-7-11-7a21.81 21.81 0 0 1 5.06-6.06"/><path d="M1 1l22 22"/><path d="M9.53 9.53A3 3 0 0 0 12 15a3 3 0 0 0 2.47-5.47"/><path d="M14.47 14.47A3 3 0 0 1 12 9a3 3 0 0 1-2.47 5.47"/></svg>
+        </span>
+      </div>
       <button type="submit">Login</button>
       <button type="button" class="switch-btn" id="showRegister">Create an account</button>
       <div class="error-msg" id="loginError"></div>
@@ -142,7 +176,20 @@
       <div class="form-title">Register</div>
       <input type="text" id="registerName" placeholder="Name" required autocomplete="username" />
       <input type="email" id="registerEmail" placeholder="Email" required autocomplete="email" />
-      <input type="password" id="registerPassword" placeholder="Password" required autocomplete="new-password" />
+      <div class="password-wrapper">
+        <input type="password" id="registerPassword" placeholder="Password" required autocomplete="new-password" />
+        <span class="toggle-password" id="toggleRegisterPassword">
+          <svg id="registerEyeOpen" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" stroke="#8b5cf6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-eye"><circle cx="12" cy="12" r="3"/><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"/></svg>
+          <svg id="registerEyeClosed" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" stroke="#8b5cf6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-eye-off" style="display:none;"><path d="M17.94 17.94A10.94 10.94 0 0 1 12 19c-7 0-11-7-11-7a21.81 21.81 0 0 1 5.06-6.06"/><path d="M1 1l22 22"/><path d="M9.53 9.53A3 3 0 0 0 12 15a3 3 0 0 0 2.47-5.47"/><path d="M14.47 14.47A3 3 0 0 1 12 9a3 3 0 0 1-2.47 5.47"/></svg>
+        </span>
+      </div>
+      <div class="password-wrapper">
+        <input type="password" id="registerPasswordRepeat" placeholder="Repeat password" required autocomplete="new-password" />
+        <span class="toggle-password" id="toggleRegisterPasswordRepeat">
+          <svg id="registerRepeatEyeOpen" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" stroke="#8b5cf6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-eye"><circle cx="12" cy="12" r="3"/><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"/></svg>
+          <svg id="registerRepeatEyeClosed" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" stroke="#8b5cf6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-eye-off" style="display:none;"><path d="M17.94 17.94A10.94 10.94 0 0 1 12 19c-7 0-11-7-11-7a21.81 21.81 0 0 1 5.06-6.06"/><path d="M1 1l22 22"/><path d="M9.53 9.53A3 3 0 0 0 12 15a3 3 0 0 0 2.47-5.47"/><path d="M14.47 14.47A3 3 0 0 1 12 9a3 3 0 0 1-2.47 5.47"/></svg>
+        </span>
+      </div>
       <button type="submit">Register</button>
       <button type="button" class="switch-btn" id="showLogin">Already have an account?</button>
       <div class="error-msg" id="registerError"></div>
@@ -206,18 +253,41 @@
       const name = document.getElementById("registerName").value;
       const email = document.getElementById("registerEmail").value;
       const password = document.getElementById("registerPassword").value;
+      const passwordRepeat = document.getElementById("registerPasswordRepeat").value;
       if (!name) {
         registerError.innerText = "Name is required!";
         return;
       }
+      if (password !== passwordRepeat) {
+        registerError.innerText = "Parollar bir xil bo‘lishi kerak!";
+        return;
+      }
       createUserWithEmailAndPassword(auth, email, password)
         .then((userCredential) => {
-          
+          // Ismni Firebase profiliga yozish
           return updateProfile(userCredential.user, { displayName: name });
         })
         .then(() => window.location.href = "dashboard.html")
         .catch(err => registerError.innerText = err.message);
     };
+
+    // Parolni ko‘rsatish/yashirish (SVG icon bilan)
+    function setupPasswordToggle(inputId, toggleId, eyeOpenId, eyeClosedId) {
+      const input = document.getElementById(inputId);
+      const toggle = document.getElementById(toggleId);
+      const eyeOpen = document.getElementById(eyeOpenId);
+      const eyeClosed = document.getElementById(eyeClosedId);
+      let visible = false;
+      toggle.onclick = () => {
+        visible = !visible;
+        input.type = visible ? "text" : "password";
+        eyeOpen.style.display = visible ? "none" : "inline";
+        eyeClosed.style.display = visible ? "inline" : "none";
+      };
+    }
+    setupPasswordToggle("loginPassword", "toggleLoginPassword", "loginEyeOpen", "loginEyeClosed");
+    setupPasswordToggle("registerPassword", "toggleRegisterPassword", "registerEyeOpen", "registerEyeClosed");
+    setupPasswordToggle("registerPasswordRepeat", "toggleRegisterPasswordRepeat", "registerRepeatEyeOpen", "registerRepeatEyeClosed");
   </script>
 
   <script>
