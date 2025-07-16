@@ -68,8 +68,9 @@
     </div>
     <div class="p-4 space-y-4">
       <button id="logoutBtn" class="w-full bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded transition">Chiqish</button>
-      <button id="myDebtsBtn" class="w-full bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded transition">Mening qarizlarim</button>
-      <button id="viewDebtsBtn" class="w-full bg-purple-500 hover:bg-purple-600 text-white px-4 py-2 rounded transition">Qarizdor qidirish</button>
+      <button onclick="window.location.href='bosh-sahifa.html'" class="w-full bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded transition">Bosh sahifa</button>
+      <button id="myDebtsBtn" class="w-full bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded transition">Mening qarzlarim</button>
+      <button id="viewDebtsBtn" class="w-full bg-purple-500 hover:bg-purple-600 text-white px-4 py-2 rounded transition">Qarzdor qidirish</button>
     </div>
   </div>
  
@@ -79,11 +80,14 @@
 
     <div class="w-full max-w-3xl flex items-center justify-between mb-6 px-4">
       <button id="openSidebar" class="text-2xl text-gray-700">&#9776;</button>
-      <h2 class="text-2xl text-[white] font-bold text-center flex-1">Qarzdorlar Dashboard</h2>
+      <h2 class="text-2xl text-[bg-gray-200] font-bold text-center flex-1">Qarzdorlar Dashboard</h2>
     </div>
 
     <div class="w-full max-w-3xl mb-4 px-4">
       <input id="searchInput" type="text" placeholder="Qarzdorni qidiring..." class="w-full p-3 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-400 text-gray-900">
+      <!-- Barcha qarzlarni qidirish inputi -->
+      <input id="searchAllDebtsInput" type="text" placeholder="Profilega yozilgan Qarzdorlarni ko‘rish" class="w-full mt-2 p-3 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-400 text-gray-900">
+      <div id="searchAllDebtsResult" class="mt-2"></div>
     </div>
 
     <form id="debtorForm" class="w-full max-w-3xl bg-gray-200 rounded-lg shadow-lg p-4 mb-6 space-y-4">
@@ -141,24 +145,39 @@
     <div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg p-8 relative batafsil-modal border border-gray-200">
       <button id="closeMyDebtsModal" class="absolute top-3 right-3 text-3xl text-gray-400 hover:text-red-500 transition">&times;</button>
       <h3 class="text-2xl font-bold mb-6 text-center text-blue-700">Mening qarizlarim</h3>
-      <form id="myDebtForm" class="space-y-4 mb-6">
-        <input id="creditorName" type="text" placeholder="Qariz bergan inson" required class="w-full p-3 border border-gray-300 rounded-lg text-gray-900 focus:ring-2 focus:ring-blue-400">
-        <input id="creditorAmount" type="number" min="1" placeholder="Summa" required class="w-full p-3 border border-gray-300 rounded-lg text-gray-900 focus:ring-2 focus:ring-blue-400">
-        <input id="creditorNote" type="text" placeholder="Izoh (ixtiyoriy)" class="w-full p-3 border border-gray-300 rounded-lg text-gray-900 focus:ring-2 focus:ring-blue-400">
-        <button type="submit" class="w-full bg-gradient-to-r from-green-400 to-green-600 hover:from-green-500 hover:to-green-700 text-white px-4 py-2 rounded-lg font-semibold shadow transition">Qarzdorlik qo'shish</button>
-      </form>
+      
       <div id="myDebtsList" class="space-y-4"></div>
     </div>
   </div>
-  <!-- Qarzlar ko‘rish modal -->
+  <!-- Qarzlar ko'rish modal -->
   <div id="viewDebtsModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 hidden">
     <div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg p-8 relative batafsil-modal border border-gray-200">
       <button id="closeViewDebtsModal" class="absolute top-3 right-3 text-3xl text-gray-400 hover:text-red-500 transition">&times;</button>
       <h3 class="text-2xl font-bold mb-6 text-center text-purple-700">Qarzlarni qidirish</h3>
-      <input id="searchByNameOrIdInput" type="text" placeholder="Ism yoki ID bo‘yicha qidiring..." class="w-full p-3 border border-gray-300 rounded-lg text-gray-900 mb-4 focus:ring-2 focus:ring-purple-400">
+      <input id="searchByNameOrIdInput" type="text" placeholder="Ism yoki ID bo'yicha qidiring..." class="w-full p-3 border border-gray-300 rounded-lg text-gray-900 mb-4 focus:ring-2 focus:ring-purple-400">
       <!-- Kod orqali qidirish inputidan keyin joylashtiring -->
       <div id="searchedCodesWrap" class="flex flex-wrap mt-2"></div>
       <div id="searchByCodeResult"></div>
+      <!-- Barcha qarzlarni qidirish natijalari -->
+      <div id="searchAllDebtsResult" class="mt-4"></div>
+    </div>
+  </div>
+  <!-- Qarzlarni kod orqali qo‘shish modal -->
+  <div id="codeAddDebtModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 hidden">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md p-8 relative batafsil-modal border border-gray-200 flex flex-col items-center">
+      <button id="closeCodeAddDebtModal" class="absolute top-3 right-3 text-3xl text-gray-400 hover:text-red-500 transition">&times;</button>
+      <h3 class="text-2xl font-bold mb-4 text-center text-purple-700">Kod orqali qarz qo‘shish</h3>
+      <div class="mb-4 text-center">
+        <span class="text-lg font-mono text-blue-700">Sizning kod:</span>
+        <div id="randomDebtCode" class="text-3xl font-bold text-blue-600 tracking-widest my-2"></div>
+        <div class="text-xs text-gray-500">Ushbu kodni qarz qabul qiluvchi odamga yuboring</div>
+      </div>
+      <div class="w-full mt-4">
+        <input id="inputDebtCode" type="text" maxlength="6" placeholder="Kodni kiriting..." class="w-full p-3 border border-gray-300 rounded-lg text-gray-900 mb-2 focus:ring-2 focus:ring-purple-400">
+        <button id="checkDebtCodeBtn" class="w-full bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded transition">Tekshirish</button>
+        <div id="codeCheckResult" class="mt-2 text-center text-red-500 font-bold hidden"></div>
+      </div>
+      <div id="addDebtFormWrap" class="w-full mt-4 hidden"></div>
     </div>
   </div>
   <script type="module" src="dashboard.js"></script>

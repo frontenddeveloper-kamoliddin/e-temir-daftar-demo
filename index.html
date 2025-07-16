@@ -176,7 +176,7 @@
     <form class="form-box" id="registerForm" autocomplete="off" style="display:none;">
       <div class="form-title">Register</div>
       <input type="text" id="registerName" placeholder="Name" required autocomplete="username" />
-      <input type="email" id="registerEmail" placeholder="Email" required autocomplete="email" />
+      <input type="tel" id="registerPhone" placeholder="Phone number" required autocomplete="tel" />
       <div class="password-wrapper">
         <input type="password" id="registerPassword" placeholder="Password" required autocomplete="new-password" />
         <span class="toggle-password" id="toggleRegisterPassword">
@@ -243,7 +243,7 @@
       const email = document.getElementById("loginEmail").value;
       const password = document.getElementById("loginPassword").value;
       signInWithEmailAndPassword(auth, email, password)
-        .then(() => window.location.href = "dashboard.html")
+        .then(() => window.location.href = "bosh-sahifa.html")
         .catch(err => loginError.innerText = err.message);
     };
 
@@ -268,7 +268,7 @@
           // Ismni Firebase profiliga yozish
           return updateProfile(userCredential.user, { displayName: name });
         })
-        .then(() => window.location.href = "dashboard.html")
+        .then(() => window.location.href = "bosh-sahifa.html")
         .catch(err => registerError.innerText = err.message);
     };
 
