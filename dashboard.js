@@ -311,13 +311,7 @@ function renderDebtors(debtors) {
     const isDark = document.documentElement.classList.contains('dark');
 
     const card = document.createElement("div");
-    card.className = `
-      rounded-2xl p-6 shadow-2xl border
-      ${isDark ? 'border-[#374151] bg-[#232c39]/90' : 'border-white/40 bg-white/60'}
-      backdrop-blur-2xl flex flex-col justify-between gap-6 relative z-0
-      transition hover:scale-[1.025] hover:shadow-2xl mb-4
-      text-gray-500
-    `.replace(/\s+/g, ' ');
+    card.className = `debtor-card flex flex-col justify-between gap-6 relative z-0 transition mb-4`;
 
     card.innerHTML = `
   <div class="flex flex-col gap-2">
@@ -396,7 +390,6 @@ document.getElementById("closeModal").onclick = () => debtorModal.classList.add(
 
 function openDebtorModal(debtor) {
   debtorModal.classList.remove("hidden");
-  let addHistory = "", subHistory = "";
   let totalAdd = 0, totalSub = 0;
 
   // Faqat o'zining yozganlarini ko'rsatish
@@ -405,16 +398,25 @@ function openDebtorModal(debtor) {
     h => (h.authorId ? h.authorId === currentUserId : debtor.userId === currentUserId)
   );
 
-  filteredHistory.forEach((h) => {
+  // Barcha harakatlarni vaqti bo'yicha saralash (eski vaqtlar avval, yangi vaqtlar keyin)
+  const sortedHistory = filteredHistory.sort((a, b) => {
+    const dateA = a.date?.toDate ? a.date.toDate() : new Date(a.date);
+    const dateB = b.date?.toDate ? b.date.toDate() : new Date(b.date);
+    return dateA - dateB;
+  });
+
+  // Barcha harakatlarni bitta ro'yxatda birlashtirish
+  let combinedHistory = "";
+  sortedHistory.forEach((h) => {
     const date = h.date?.toDate ? h.date.toDate() : new Date();
     const time = date.toLocaleString("uz-UZ");
 
     if (h.type === "add") {
-      addHistory += `
+      combinedHistory += `
         <div class="bg-green-100 dark:bg-green-900 rounded p-2 mb-2">
-          +${h.amount} so‘m 
+          +${h.amount} so'm 
           <span class="text-xs text-gray-500 ml-2">
-            (${h.count || 1} x ${h.price || h.amount} so‘m, ${h.product || debtor.product || ""})
+            (${h.count || 1} x ${h.price || h.amount} so'm, ${h.product || debtor.product || ""})
           </span>
           <span class="text-xs text-gray-400 ml-2">${time}</span>
           <div class="text-xs text-gray-400">${h.note || ""}</div>
@@ -423,10 +425,11 @@ function openDebtorModal(debtor) {
     }
 
     if (h.type === "sub") {
-      subHistory += `
+      combinedHistory += `
         <div class="bg-red-100 dark:bg-red-900 rounded p-2 mb-2">
-          -${h.amount} so‘m 
+          -${h.amount} so'm 
           <span class="text-xs text-gray-400 ml-2">${time}</span>
+          ${h.note ? `<div class="text-xs text-gray-400 mt-1">${h.note}</div>` : ""}
         </div>`;
       totalSub += h.amount;
     }
@@ -438,10 +441,10 @@ function openDebtorModal(debtor) {
       <div class="font-bold text-2xl mb-1 flex items-center gap-2 text-gray-900 dark:text-white">
         ${debtor.name}
       </div>
-      <div class="text-sm text-gray-400 mb-2">${debtor.product ? `${debtor.product} (${debtor.count || 1} x ${debtor.price || 0} so‘m)` : ""}</div>
+      <div class="text-sm text-gray-400 mb-2">${debtor.product ? `${debtor.product} (${debtor.count || 1} x ${debtor.price || 0} so'm)` : ""}</div>
       <div class="text-xs text-gray-400 mb-2">${debtor.note || ""}</div>
       <div class="mb-4 text-base">
-        Umumiy qarz: <span class="font-bold text-blue-700 dark:text-blue-300">${totalAdd - totalSub} so‘m</span>
+        Umumiy qarz: <span class="font-bold text-blue-700 dark:text-blue-300">${totalAdd - totalSub} so'm</span>
       </div>
       <form id="addDebtForm" class="flex flex-col gap-2 mb-3">
         <div class="grid grid-cols-1 gap-2">
@@ -450,10 +453,10 @@ function openDebtorModal(debtor) {
           <input type="number" min="1" placeholder="Mahsulot narxi" class="p-2 bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded focus:outline-none focus:ring-2 focus:ring-green-400 text-gray-900 dark:text-gray-100 transition" required autocomplete="off">
           <input type="text" placeholder="Izoh (ixtiyoriy)" class="p-2 bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded focus:outline-none focus:ring-2 focus:ring-green-400 text-gray-900 dark:text-gray-100 transition" autocomplete="off">
         </div>
-        <button type="submit" class="bg-green-500 hover:bg-green-600 text-white px-3 py-2 rounded font-semibold shadow transition">Qo‘shish</button>
+        <button type="submit" class="bg-green-500 hover:bg-green-600 text-white px-3 py-2 rounded font-semibold shadow transition">Qo'shish</button>
       </form>
       <form id="subDebtForm" class="flex flex-col gap-2 mb-3">
-        <input type="number" min="1" placeholder="Qarz ayirish (so‘m)" class="p-2 bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded focus:outline-none focus:ring-2 focus:ring-red-400 text-gray-900 dark:text-gray-100 transition" required autocomplete="off">
+        <input type="number" min="1" placeholder="Qarz ayirish (so'm)" class="p-2 bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded focus:outline-none focus:ring-2 focus:ring-red-400 text-gray-900 dark:text-gray-100 transition" required autocomplete="off">
         <input type="text" placeholder="Izoh (ixtiyoriy)" class="p-2 bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded focus:outline-none focus:ring-2 focus:ring-red-400 text-gray-900 dark:text-gray-100 transition" autocomplete="off">
         <button type="submit" class="bg-red-500 hover:bg-red-600 text-white px-3 py-2 rounded font-semibold shadow transition">Ayirish</button>
       </form>
@@ -465,34 +468,28 @@ function openDebtorModal(debtor) {
     </div>
     <div class="flex-1 flex flex-col gap-4">
       <div>
-        <div class="font-bold mb-2 text-gray-900 dark:text-white">Qo‘shilganlar</div>
-        <div class="space-y-2">
-          ${addHistory || '<div class="text-gray-400">Yo‘q</div>'}
-        </div>
-      </div>
-      <div>
-        <div class="font-bold mb-2 mt-2 text-gray-900 dark:text-white">Ayirilganlar</div>
-        <div class="space-y-2">
-          ${subHistory || '<div class="text-gray-400">Yo‘q</div>'}
+        <div class="font-bold mb-2 text-gray-900 dark:text-white">Barcha harakatlar (vaqti bo'yicha)</div>
+        <div class="space-y-2 max-h-96 overflow-y-auto">
+          ${combinedHistory || '<div class="text-gray-400">Yo\'q</div>'}
         </div>
       </div>
     </div>
   </div>
   <div class="mt-4 grid grid-cols-1 md:grid-cols-3 gap-4">
     <div class="bg-white/80 dark:bg-gray-900/60 rounded-lg p-4 flex flex-col items-center border border-gray-200 dark:border-gray-700 shadow">
-      <div class="text-sm font-semibold text-gray-700 dark:text-gray-200 mb-1">Jami qo‘shilgan</div>
+      <div class="text-sm font-semibold text-gray-700 dark:text-gray-200 mb-1">Jami qo'shilgan</div>
       <div class="text-2xl font-bold text-green-600 dark:text-green-400">${totalAdd}</div>
-      <div class="text-green-600 dark:text-green-400 font-semibold">so‘m</div>
+      <div class="text-green-600 dark:text-green-400 font-semibold">so'm</div>
     </div>
     <div class="bg-white/80 dark:bg-gray-900/60 rounded-lg p-4 flex flex-col items-center border border-gray-200 dark:border-gray-700 shadow">
       <div class="text-sm font-semibold text-gray-700 dark:text-gray-200 mb-1">Jami ayirilgan</div>
       <div class="text-2xl font-bold text-red-500 dark:text-red-400">${totalSub}</div>
-      <div class="text-red-500 dark:text-red-400 font-semibold">so‘m</div>
+      <div class="text-red-500 dark:text-red-400 font-semibold">so'm</div>
     </div>
     <div class="bg-white/80 dark:bg-gray-900/60 rounded-lg p-4 flex flex-col items-center border border-gray-200 dark:border-gray-700 shadow">
       <div class="text-sm font-semibold text-gray-700 dark:text-gray-200 mb-1">Qarzdorlik</div>
       <div class="text-2xl font-bold text-blue-600 dark:text-blue-400">${totalAdd - totalSub}</div>
-      <div class="text-blue-600 dark:text-blue-400 font-semibold">so‘m</div>
+      <div class="text-blue-600 dark:text-blue-400 font-semibold">so'm</div>
     </div>
   </div>
 `;
@@ -500,7 +497,7 @@ function openDebtorModal(debtor) {
   // Add debt form handler
   modalContent.querySelector("#addDebtForm").onsubmit = async (e) => {
     e.preventDefault();
-    if (!(await showConfirmDiv("Qo‘shaveraymi?"))) return;
+    if (!(await showConfirmDiv("Qo'shaveraymi?"))) return;
     
     Array.from(e.target.elements).forEach(el => {
       if (el.tagName === "INPUT" || el.tagName === "BUTTON") el.style.display = "none";
@@ -539,7 +536,7 @@ function openDebtorModal(debtor) {
         date: Timestamp.now(),
         authorId: auth.currentUser.uid
       }),
-      // Jami qo‘shilganni yangilash
+      // Jami qo'shilganni yangilash
       totalAdded: (debtor.totalAdded || 0) + amount
     });
     
