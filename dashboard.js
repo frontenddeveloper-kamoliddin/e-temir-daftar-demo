@@ -311,7 +311,13 @@ function renderDebtors(debtors) {
     const isDark = document.documentElement.classList.contains('dark');
 
     const card = document.createElement("div");
-    card.className = `debtor-card flex flex-col justify-between gap-6 relative z-0 transition mb-4`;
+    card.className = `
+      rounded-2xl p-6 shadow-2xl border
+      ${isDark ? 'border-[#374151] bg-[#232c39]/90' : 'border-white/40 bg-white/60'}
+      backdrop-blur-2xl flex flex-col justify-between gap-6 relative z-0
+      transition hover:scale-[1.025] hover:shadow-2xl mb-4
+      text-gray-500
+    `.replace(/\s+/g, ' ');
 
     card.innerHTML = `
   <div class="flex flex-col gap-2">
