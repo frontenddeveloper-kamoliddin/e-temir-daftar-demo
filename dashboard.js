@@ -1123,10 +1123,11 @@ function initApp() {
     document.getElementById('myDebtsModal').classList.remove('hidden');
     loadMyDebts();
   });
-  document.getElementById('messagesBtn')?.addEventListener('click', () => {
-    document.getElementById('messagesModal').classList.remove('hidden');
-    loadMessages();
-  });
+  // Messages button now redirects to admin-messages.html
+  // document.getElementById('messagesBtn')?.addEventListener('click', () => {
+  //   document.getElementById('messagesModal').classList.remove('hidden');
+  //   loadMessages();
+  // });
 
   document.getElementById('notificationBtn')?.addEventListener('click', toggleNotifications);
   
@@ -2192,21 +2193,21 @@ async function updateMessageCountBadge() {
     
     const totalCount = unreadNotificationsCount;
     
-    // Update or create badge
-    const messagesBtn = document.getElementById('messagesBtn');
+    // Update or create badge for admin messages button
+    const messagesBtn = document.querySelector('button[onclick*="admin-messages.html"]');
     if (!messagesBtn) return;
     
-    let badge = messagesBtn.querySelector('.message-badge');
+    let badge = messagesBtn.querySelector('#messageBadge');
     if (totalCount > 0) {
       if (!badge) {
-        badge = document.createElement('span');
-        badge.className = 'message-badge absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full h-6 w-6 flex items-center justify-center font-bold';
-        messagesBtn.style.position = 'relative';
-        messagesBtn.appendChild(badge);
+        badge = document.getElementById('messageBadge');
       }
-      badge.textContent = totalCount > 99 ? '99+' : totalCount;
+      if (badge) {
+        badge.textContent = totalCount > 99 ? '99+' : totalCount;
+        badge.classList.remove('hidden');
+      }
     } else if (badge) {
-      badge.remove();
+      badge.classList.add('hidden');
     }
   } catch (error) {
     console.error('Error updating message count badge:', error);
