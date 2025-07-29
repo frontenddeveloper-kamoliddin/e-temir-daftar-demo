@@ -623,9 +623,13 @@ function filterDebtors(debtors, filterType) {
 
 // Calculate total debt for a debtor
 function calculateTotalDebt(debtor) {
+  const currentUserId = auth.currentUser.uid;
+  // Filter history to only include transactions created by current user
+  const userHistory = (debtor.history || []).filter(h => h.authorId === currentUserId);
+  
   let totalAdd = 0, totalSub = 0;
   
-  (debtor.history || []).forEach((h) => {
+  userHistory.forEach((h) => {
     if (h.type === "add") totalAdd += h.amount || 0;
     if (h.type === "sub") totalSub += h.amount || 0;
   });
@@ -655,9 +659,13 @@ function renderDebtors(debtors) {
     debtorsList.innerHTML = '';
     
     debtors.forEach((debtor, index) => {
-      const totalDebt = calculateTotalDebt(debtor);
-      const totalAdded = (debtor.history || []).reduce((sum, h) => h.type === 'add' ? sum + (h.amount || 0) : sum, 0);
-      const totalSubtracted = (debtor.history || []).reduce((sum, h) => h.type === 'sub' ? sum + (h.amount || 0) : sum, 0);
+      const currentUserId = auth.currentUser.uid;
+      // Filter history to only show transactions created by current user
+      const userHistory = (debtor.history || []).filter(h => h.authorId === currentUserId);
+      
+      const totalAdded = userHistory.reduce((sum, h) => h.type === 'add' ? sum + (h.amount || 0) : sum, 0);
+      const totalSubtracted = userHistory.reduce((sum, h) => h.type === 'sub' ? sum + (h.amount || 0) : sum, 0);
+      const totalDebt = totalAdded - totalSubtracted;
       
       // Calculate progress percentage
       const progress = totalAdded > 0 ? (totalSubtracted / totalAdded) * 100 : 0;
@@ -1731,8 +1739,13 @@ function openDebtorModal(debtor) {
   modal.id = 'debtorDetailModal';
   modal.className = 'fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50';
   
+  const currentUserId = auth.currentUser.uid;
+  
+  // Filter history to only show transactions created by current user
+  const userHistory = (debtor.history || []).filter(h => h.authorId === currentUserId);
+  
   let totalAdd = 0, totalSub = 0;
-  (debtor.history || []).forEach((h) => {
+  userHistory.forEach((h) => {
     if (h.type === "add") totalAdd += h.amount || 0;
     if (h.type === "sub") totalSub += h.amount || 0;
   });
@@ -1787,8 +1800,8 @@ function openDebtorModal(debtor) {
         <div class="flex-1">
           <div class="font-bold mb-4 text-gray-900 dark:text-white">Barcha harakatlar</div>
           <div class="space-y-3 max-h-96 overflow-y-auto">
-            ${(debtor.history || []).length > 0 ? 
-              (debtor.history || []).map(h => {
+            ${userHistory.length > 0 ? 
+              userHistory.map(h => {
                 const date = h.date?.toDate ? h.date.toDate() : new Date();
                 const time = date.toLocaleString("uz-UZ");
                 return `
@@ -1802,7 +1815,7 @@ function openDebtorModal(debtor) {
                   </div>
                 `;
               }).join("") : 
-              '<div class="text-gray-400 text-center py-8">Tarix yo\'q</div>'
+              '<div class="text-gray-400 text-center py-8">Siz yozgan qarzlar yo\'q</div>'
             }
           </div>
         </div>
@@ -2019,53 +2032,18 @@ async function updateUserTotals() {
     snapshot.forEach((doc) => {
       const data = doc.data();
       if (data.userId === user.uid) {
-        // Use stored totals if available, otherwise calculate from history
-        if (typeof data.totalAdded === "number") {
-          totalAdded += data.totalAdded;
-        } else {
-          (data.history || []).forEach(h => {
-            if (h.type === "add") totalAdded += h.amount || 0;
-          });
-        }
+        // Filter history to only include transactions created by current user
+        const userHistory = (data.history || []).filter(h => h.authorId === user.uid);
         
-        if (typeof data.totalSubtracted === "number") {
-          totalSubtracted += data.totalSubtracted;
-        } else {
-          (data.history || []).forEach(h => {
-            if (h.type === "sub") totalSubtracted += h.amount || 0;
-          });
-        }
+        // Calculate totals only from user's own transactions
+        userHistory.forEach(h => {
+          if (h.type === "add") totalAdded += h.amount || 0;
+          if (h.type === "sub") totalSubtracted += h.amount || 0;
+        });
       }
     });
 
-    // Add search users totals
-    for (let idx = 0; idx < addedSearchUsers.length; idx++) {
-      const searchUser = addedSearchUsers[idx];
-      let searchUserTotalAdded = 0, searchUserTotalSub = 0;
-      const debtorsSnap = await retryFirebaseOperation(() => getDocs(collection(db, "debtors")));
-      const debtor = debtorsSnap.docs
-        .map(doc => ({ ...doc.data(), id: doc.id }))
-        .find(d => d.userId === searchUser.id || d.code === searchUser.id || d.id === searchUser.id);
-
-      if (debtor) {
-        if (typeof debtor.totalAdded === "number") {
-          searchUserTotalAdded = debtor.totalAdded;
-        } else {
-          (debtor.history || []).forEach(h => {
-            if (h.type === "add") searchUserTotalAdded += h.amount || 0;
-          });
-        }
-        if (typeof debtor.totalSubtracted === "number") {
-          searchUserTotalSub = debtor.totalSubtracted;
-        } else {
-          (debtor.history || []).forEach(h => {
-            if (h.type === "sub") searchUserTotalSub += h.amount || 0;
-          });
-        }
-      }
-      totalAdded += searchUserTotalAdded;
-      totalSubtracted += searchUserTotalSub;
-    }
+    // Removed addedSearchUsers logic - only show current user's transactions
 
     totalDebt = totalAdded - totalSubtracted;
 
@@ -2261,6 +2239,8 @@ async function renderAddedSearchUsers() {
 
   container.innerHTML = '';
   
+  const currentUserId = auth.currentUser.uid;
+  
   for (let idx = 0; idx < addedSearchUsers.length; idx++) {
     const user = addedSearchUsers[idx];
     let totalAdded = 0, totalSub = 0;
@@ -2271,21 +2251,33 @@ async function renderAddedSearchUsers() {
       .find(d => d.userId === user.id || d.code === user.id || d.id === user.id);
 
     if (debtor) {
+      // Filter history to only include transactions created by current user
+      const userHistory = (debtor.history || []).filter(h => h.authorId === currentUserId);
+      
       if (typeof debtor.totalAdded === "number") {
-        totalAdded = debtor.totalAdded;
+        // If using totalAdded field, we need to calculate based on user's transactions
+        userHistory.forEach(h => {
+          if (h.type === "add") totalAdded += h.amount || 0;
+        });
       } else {
-        (debtor.history || []).forEach(h => {
+        userHistory.forEach(h => {
           if (h.type === "add") totalAdded += h.amount || 0;
         });
       }
       if (typeof debtor.totalSubtracted === "number") {
-        totalSub = debtor.totalSubtracted;
+        // If using totalSubtracted field, we need to calculate based on user's transactions
+        userHistory.forEach(h => {
+          if (h.type === "sub") totalSub += h.amount || 0;
+        });
       } else {
-        (debtor.history || []).forEach(h => {
+        userHistory.forEach(h => {
           if (h.type === "sub") totalSub += h.amount || 0;
         });
       }
     }
+
+    // Only show profiles where the current user has written debts (totalAdded > 0)
+    if (totalAdded === 0) continue;
 
     const remaining = totalAdded - totalSub;
 
