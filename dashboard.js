@@ -536,14 +536,17 @@ if (debtorForm) {
 // Load and render debtors
 async function loadDebtors() {
   const user = auth.currentUser;
-  if (!user) return;
+  if (!user) {
+    return;
+  }
   
-        const searchInput = document.getElementById("searchInput");
+  const searchInput = document.getElementById("searchInput");
   const filterSelect = document.getElementById("filterSelect");
   
   const search = searchInput ? searchInput.value.toLowerCase() : "";
   const filterType = filterSelect ? filterSelect.value : "";
-    const snapshot = await retryFirebaseOperation(() => getDocs(collection(db, "debtors")));
+  
+  const snapshot = await retryFirebaseOperation(() => getDocs(collection(db, "debtors")));
   
   let debtors = [];
   snapshot.forEach((doc) => {
@@ -555,14 +558,16 @@ async function loadDebtors() {
   });
   
   // Add search users
-  addedSearchUsers.forEach(user => {
-    const debtor = snapshot.docs
-      .map(doc => ({ ...doc.data(), id: doc.id }))
-      .find(d => d.userId === user.id || d.code === user.id || d.id === user.id);
-    if (debtor && !debtors.some(d => d.id === debtor.id)) {
-      debtors.push(debtor);
-    }
-  });
+  if (typeof addedSearchUsers !== 'undefined' && Array.isArray(addedSearchUsers)) {
+    addedSearchUsers.forEach(user => {
+      const debtor = snapshot.docs
+        .map(doc => ({ ...doc.data(), id: doc.id }))
+        .find(d => d.userId === user.id || d.code === user.id || d.id === user.id);
+      if (debtor && !debtors.some(d => d.id === debtor.id)) {
+        debtors.push(debtor);
+      }
+    });
+  }
   
   if (search) {
     debtors = debtors.filter((d) => enhancedSearch(d.name, search));
@@ -636,7 +641,7 @@ function renderDebtors(debtors) {
   
   if (debtorsList) {
     debtorsList.innerHTML = '';
-  
+    
     debtors.forEach((debtor, index) => {
       const totalDebt = calculateTotalDebt(debtor);
       const totalAdded = (debtor.history || []).reduce((sum, h) => h.type === 'add' ? sum + (h.amount || 0) : sum, 0);
@@ -715,8 +720,9 @@ function renderDebtors(debtors) {
       
       debtorsList.appendChild(card);
     });
-    
-    // Add event listeners to buttons
+  }
+  
+  // Add event listeners to buttons
     document.querySelectorAll('.batafsil-btn').forEach(btn => {
       btn.addEventListener('click', async () => {
         const debtorId = btn.getAttribute('data-id');
@@ -761,7 +767,7 @@ function renderDebtors(debtors) {
       });
     });
   }
-}
+
 
 // Format money
 function formatMoney(amount) {
@@ -1148,7 +1154,18 @@ function initApp() {
   // Setup modal close buttons
   setupModalCloseButtons();
   
-
+  // Load initial data
+  loadDebtors();
+  loadUserTotals();
+  loadAllUsers();
+  loadAddedSearchUsers();
+  checkPendingPermissionRequests();
+  checkNotifications();
+  
+  // Setup listeners
+  setupPermissionRequestListener();
+  setupNotificationListener();
+  setupPermissionUpdateListener();
 }
 
 // Setup search functionality
@@ -1164,7 +1181,7 @@ function setupSearchFunctionality() {
         return;
       }
       
-      const results = allUsers.filter(user =>
+      const results = (allUsers || []).filter(user =>
         enhancedSearch(user.id, query) ||
         (user.username && enhancedSearch(user.username, query))
       );
@@ -2285,7 +2302,6 @@ async function loadAllUsers() {
         username: data.username || null
       };
     });
-    console.log('Loaded users:', allUsers.length);
   } catch (error) {
     console.error('Error loading users:', error);
   }
@@ -2485,10 +2501,10 @@ async function renderAddedSearchUsers() {
   if (!container) {
     container = document.createElement('div');
     container.id = 'addedSearchUsersList';
-    container.className = 'w-full max-w-3xl space-y-4 px-4 mb-6';
+    container.className = 'w-full max-w-3xl space-y-8 px-4 mb-6 mt-8';
     const debtorsList = document.getElementById('debtorsList');
     if (debtorsList && debtorsList.parentNode) {
-      debtorsList.parentNode.insertBefore(container, debtorsList);
+      debtorsList.parentNode.appendChild(container);
     }
   }
 
