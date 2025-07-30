@@ -519,6 +519,7 @@ if (debtorForm) {
       product,
       note,
       date: Timestamp.now(),
+      authorId: user.uid,
     }],
   });
   
@@ -661,7 +662,7 @@ function renderDebtors(debtors) {
     debtors.forEach((debtor, index) => {
       const currentUserId = auth.currentUser.uid;
       // Filter history to only show transactions created by current user
-      const userHistory = (debtor.history || []).filter(h => h.authorId === currentUserId);
+      const userHistory = (debtor.history || []).filter(h => h.authorId === currentUserId || !h.authorId);
       
       const totalAdded = userHistory.reduce((sum, h) => h.type === 'add' ? sum + (h.amount || 0) : sum, 0);
       const totalSubtracted = userHistory.reduce((sum, h) => h.type === 'sub' ? sum + (h.amount || 0) : sum, 0);
@@ -1742,7 +1743,7 @@ function openDebtorModal(debtor) {
   const currentUserId = auth.currentUser.uid;
   
   // Filter history to only show transactions created by current user
-  const userHistory = (debtor.history || []).filter(h => h.authorId === currentUserId);
+  const userHistory = (debtor.history || []).filter(h => h.authorId === currentUserId || !h.authorId);
   
   let totalAdd = 0, totalSub = 0;
   userHistory.forEach((h) => {
