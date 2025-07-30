@@ -234,6 +234,77 @@
     .close-btn:hover {
       background: rgba(255, 255, 255, 0.1);
     }
+    .help-form {
+      display: none;
+    }
+    .help-form input,
+    .help-form textarea {
+      width: 100%;
+      padding: 0.7rem 1rem;
+      border-radius: 6px;
+      border: none;
+      background: #fff;
+      color: #222;
+      font-size: 1rem;
+      margin-bottom: 0.8rem;
+      outline: none;
+      transition: box-shadow 0.2s;
+      box-shadow: 0 1px 4px #0001;
+      box-sizing: border-box;
+    }
+    .help-form input:focus,
+    .help-form textarea:focus {
+      box-shadow: 0 2px 8px #8b5cf655;
+    }
+    .help-form textarea {
+      resize: vertical;
+      min-height: 80px;
+      font-family: inherit;
+    }
+    .help-form button {
+      padding: 0.7rem 0;
+      border-radius: 6px;
+      border: none;
+      background: linear-gradient(90deg, #8b5cf6 0%, #6366f1 100%);
+      color: #fff;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      width: 100%;
+      box-shadow: 0 2px 8px #8b5cf633;
+      transition: background 0.2s, box-shadow 0.2s, transform 0.1s;
+    }
+    .help-form button:hover {
+      background: linear-gradient(90deg, #6366f1 0%, #8b5cf6 100%);
+      box-shadow: 0 4px 16px #8b5cf655;
+      transform: translateY(-2px) scale(1.02);
+    }
+    .back-btn {
+      background: rgba(255, 255, 255, 0.1) !important;
+      margin-bottom: 0.8rem;
+    }
+    .back-btn:hover {
+      background: rgba(255, 255, 255, 0.2) !important;
+    }
+    .help-form-btn {
+      padding: 0.7rem 0;
+      border-radius: 6px;
+      border: none;
+      background: linear-gradient(90deg, #8b5cf6 0%, #6366f1 100%);
+      color: #fff;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      width: 100%;
+      margin-top: 1rem;
+      box-shadow: 0 2px 8px #8b5cf633;
+      transition: background 0.2s, box-shadow 0.2s, transform 0.1s;
+    }
+    .help-form-btn:hover {
+      background: linear-gradient(90deg, #6366f1 0%, #8b5cf6 100%);
+      box-shadow: 0 4px 16px #8b5cf655;
+      transform: translateY(-2px) scale(1.02);
+    }
   </style>
 </head>
 <body>
@@ -259,6 +330,16 @@
           <source src="yordam_vd/Screen Recording 2025-07-29 231137.mp4" type="video/mp4">
           Sizning brauzeringiz video elementini qo'llab-quvvatlamaydi.
         </video>
+      </div>
+      <button class="help-form-btn" id="showHelpForm">Savol yoki muammo bormi?</button>
+      
+      <!-- Yordam formasi -->
+      <div class="help-form" id="helpForm">
+        <button class="back-btn" id="backToVideo">← Orqaga</button>
+        <input type="text" id="helpName" placeholder="Ismingiz" required>
+        <input type="tel" id="helpPhone" placeholder="Telefon raqamingiz" required>
+        <textarea id="helpQuestion" placeholder="Savolingiz yoki muammongizni yozing..." required></textarea>
+        <button type="submit" id="submitHelp">Jo'natish</button>
       </div>
     </div>
   </div>
@@ -331,6 +412,10 @@
     const helpBtn = document.getElementById("helpBtn");
     const helpModal = document.getElementById("helpModal");
     const closeHelp = document.getElementById("closeHelp");
+    const showHelpForm = document.getElementById("showHelpForm");
+    const helpForm = document.getElementById("helpForm");
+    const backToVideo = document.getElementById("backToVideo");
+    const submitHelp = document.getElementById("submitHelp");
 
     // Yordam tugmasi uchun funksiya
     helpBtn.onclick = () => {
@@ -340,13 +425,67 @@
     // Yordam modalini yopish
     closeHelp.onclick = () => {
       helpModal.style.display = "none";
+      // Formani yashirish va videoni ko'rsatish
+      helpForm.style.display = "none";
+      document.querySelector(".video-container").style.display = "block";
+      showHelpForm.style.display = "block";
     };
 
     // Modal tashqarisini bosganda yopish
     helpModal.onclick = (e) => {
       if (e.target === helpModal) {
         helpModal.style.display = "none";
+        // Formani yashirish va videoni ko'rsatish
+        helpForm.style.display = "none";
+        document.querySelector(".video-container").style.display = "block";
+        showHelpForm.style.display = "block";
       }
+    };
+
+    // Formani ko'rsatish
+    showHelpForm.onclick = () => {
+      document.querySelector(".video-container").style.display = "none";
+      showHelpForm.style.display = "none";
+      helpForm.style.display = "block";
+    };
+
+    // Videoga qaytish
+    backToVideo.onclick = () => {
+      helpForm.style.display = "none";
+      document.querySelector(".video-container").style.display = "block";
+      showHelpForm.style.display = "block";
+    };
+
+    // Yordam formani jo'natish
+    submitHelp.onclick = (e) => {
+      e.preventDefault();
+      const name = document.getElementById("helpName").value;
+      const phone = document.getElementById("helpPhone").value;
+      const question = document.getElementById("helpQuestion").value;
+      
+      if (!name || !phone || !question) {
+        alert("Barcha maydonlarni to'ldiring!");
+        return;
+      }
+      
+      // Firebase'ga yordam xabarini saqlash
+      const helpMessage = {
+        from: name,
+        fromPhone: phone,
+        fromName: name,
+        to: 'admin',
+        subject: 'Yordam so\'rovi',
+        text: question,
+        createdAt: new Date(),
+        read: false,
+        type: 'help_request'
+      };
+      
+      // LocalStorage'ga saqlash (admin panel uchun)
+      localStorage.setItem('helpMessage', JSON.stringify(helpMessage));
+      
+      // Admin panelga o'tish
+      window.location.href = "admin-panel.html";
     };
 
  

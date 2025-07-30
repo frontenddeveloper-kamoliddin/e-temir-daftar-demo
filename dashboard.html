@@ -162,14 +162,10 @@
       </button>
       
       <div class="space-y-2">
-        <button onclick="window.location.href='dashboard.html'" class="w-full flex items-center gap-3 p-3 rounded-lg text-slate-700 dark:text-slate-200 hover:bg-indigo-50 dark:hover:bg-slate-700 transition">
-          <i class="fas fa-tachometer-alt text-indigo-500"></i>
-          <span>Dashboard</span>
-        </button>
         
         <button onclick="window.location.href='bosh-sahifa.html'" class="w-full flex items-center gap-3 p-3 rounded-lg text-slate-700 dark:text-slate-200 hover:bg-indigo-50 dark:hover:bg-slate-700 transition">
-          <i class="fas fa-home text-green-500"></i>
-          <span>Bosh Sahifa</span>
+          <i class="fas fa-chart-bar text-xl text-green-500"></i>
+          <span>Ma'lumotlar</span>
         </button>
         
         <button id="myDebtsBtn" class="w-full flex items-center gap-3 p-3 rounded-lg text-slate-700 dark:text-slate-200 hover:bg-indigo-50 dark:hover:bg-slate-700 transition">
@@ -217,6 +213,10 @@
       </h1>
       
       <div class="flex items-center gap-4">
+        <button onclick="window.location.href='bosh-sahifa.html'" class="w-10 h-10 rounded-full bg-white dark:bg-slate-700 shadow flex items-center justify-center hover:bg-slate-50 dark:hover:bg-slate-600 transition">
+          <i class="fas fa-chart-bar text-green-500"></i>
+        </button>
+        
         <button id="toggleDark" class="w-10 h-10 rounded-full bg-white dark:bg-slate-700 shadow flex items-center justify-center">
           <i id="darkIcon" class="fas fa-moon text-indigo-600 dark:text-yellow-400"></i>
         </button>
@@ -233,35 +233,7 @@
       </div>
     </header>
     
-    <!-- Stats Cards -->
-    <div class="w-full grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-      <div class="stat-card bg-gradient-to-r from-indigo-500 to-indigo-600">
-        <div class="text-lg">Umumiy Qo'shilgan</div>
-        <div id="totalAdded" class="text-3xl font-bold mt-2">0 so'm</div>
-        <div class="flex items-center gap-2 mt-3">
-          <i class="fas fa-arrow-up"></i>
-          <span>Oxirgi 30 kun</span>
-        </div>
-      </div>
-      
-      <div class="stat-card bg-gradient-to-r from-emerald-500 to-emerald-600">
-        <div class="text-lg">Umumiy Ayirilgan</div>
-        <div id="totalSubtracted" class="text-3xl font-bold mt-2">0 so'm</div>
-        <div class="flex items-center gap-2 mt-3">
-          <i class="fas fa-arrow-down"></i>
-          <span>Oxirgi 30 kun</span>
-        </div>
-      </div>
-      
-      <div class="stat-card bg-gradient-to-r from-amber-500 to-amber-600">
-        <div class="text-lg">Umumiy Qarzdorlik</div>
-        <div id="totalDebt" class="text-3xl font-bold mt-2">0 so'm</div>
-        <div class="flex items-center gap-2 mt-3">
-          <i class="fas fa-users"></i>
-          <span id="debtorsCount">0 kishi</span>
-        </div>
-      </div>
-    </div>
+
     
     <!-- Search and Filters -->
     <div class="w-full bg-white dark:bg-slate-800 card p-6 mb-6">
@@ -314,6 +286,11 @@
     
 
   </div>
+  
+  <!-- Scroll to Top Button -->
+  <button id="scrollToTopBtn" class="floating-btn bg-gradient-to-r from-green-500 to-emerald-600 text-white" style="bottom: 110px;">
+    <i class="fas fa-arrow-up text-xl"></i>
+  </button>
   
   <!-- Floating Button -->
   <button id="floatingAddBtn" class="floating-btn bg-gradient-to-r from-indigo-500 to-purple-600 text-white">
@@ -521,6 +498,14 @@
       icon.classList.remove('fa-moon');
       icon.classList.add('fa-sun');
     }
+    
+    // Scroll to top button
+    document.getElementById('scrollToTopBtn').addEventListener('click', () => {
+      window.scrollTo({
+        top: 0,
+        behavior: 'smooth'
+      });
+    });
     
     // Floating button
     document.getElementById('floatingAddBtn').addEventListener('click', () => {
