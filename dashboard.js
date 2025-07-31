@@ -612,6 +612,8 @@ function filterDebtors(debtors, filterType) {
       if (profilesContainer) {
         profilesContainer.classList.remove('hidden');
       }
+      // Render added search users to ensure they are displayed
+      renderAddedSearchUsers();
       return debtors;
     default:
       // Hide profile cards for other options
@@ -1266,6 +1268,7 @@ async function addUserWithPermission(userToAdd) {
   addedSearchUsers.push(userToAdd);
   renderAddedSearchUsers();
   saveAddedSearchUsers();
+  loadDebtors(); // Refresh the debtors list to include the new user
   showNotification(`${userToAdd.name} muvaffaqiyatli qo'shildi!`, 'success');
 }
 
@@ -1537,9 +1540,9 @@ async function loadMyDebts() {
               </div>
             ` : '';
             
-            const quantityInfo = h.quantity ? `
+            const quantityInfo = h.count ? `
               <div class="text-xs text-gray-500">
-                <span class="font-medium">Miqdori:</span> ${h.quantity} ta
+                <span class="font-medium">Miqdori:</span> ${h.count} ta
               </div>
             ` : '';
             
@@ -1810,7 +1813,9 @@ function openDebtorModal(debtor) {
                     <div class="font-semibold ${h.type === "add" ? "text-green-800 dark:text-green-200" : "text-red-800 dark:text-red-200"}">
                       ${h.type === "add" ? "+" : "-"}${h.amount} so'm
                     </div>
-                    ${h.product ? `<div class="text-sm text-gray-600 dark:text-gray-300">${h.product} (${h.count || 1} x ${h.price || h.amount} so'm)</div>` : ""}
+                    ${h.product ? `<div class="text-sm text-gray-600 dark:text-gray-300">Mahsulot: ${h.product}</div>` : ""}
+                    ${h.count ? `<div class="text-sm text-gray-600 dark:text-gray-300">Miqdori: ${h.count} ta</div>` : ""}
+                    ${h.price ? `<div class="text-sm text-gray-600 dark:text-gray-300">Narxi: ${formatMoney(h.price)} so'm</div>` : ""}
                     ${h.note ? `<div class="text-sm text-gray-500 dark:text-gray-400 mt-1">${h.note}</div>` : ""}
                     <div class="text-xs text-gray-400 mt-2">${time}</div>
                   </div>
@@ -2277,8 +2282,8 @@ async function renderAddedSearchUsers() {
       }
     }
 
-    // Only show profiles where the current user has written debts (totalAdded > 0)
-    if (totalAdded === 0) continue;
+    // Show all added profiles, even if no debts have been written yet
+    // if (totalAdded === 0) continue;
 
     const remaining = totalAdded - totalSub;
 
@@ -2302,15 +2307,21 @@ async function renderAddedSearchUsers() {
             ` : ""}
           </div>
           <div class="text-xs text-gray-500 dark:text-gray-400 font-mono mb-1">ID: ${user.id}</div>
-          <div class="mt-1 font-semibold text-base text-gray-700 dark:text-gray-200">
-            Jami qo'shilgan: <span class="text-green-600 dark:text-green-400 font-bold">${totalAdded} so'm</span>
-          </div>
-          <div class="mt-1 font-semibold text-base">
-            <span class="text-red-600 dark:text-red-400">Jami ayirilgan: ${totalSub} so'm</span>
-          </div>
-          <div class="mt-1 font-semibold text-base">
-            Qolgan qarzdorlik: <span class="text-blue-700 dark:text-blue-400 font-bold">${remaining} so'm</span>
-          </div>
+          ${totalAdded > 0 ? `
+            <div class="mt-1 font-semibold text-base text-gray-700 dark:text-gray-200">
+              Jami qo'shilgan: <span class="text-green-600 dark:text-green-400 font-bold">${totalAdded} so'm</span>
+            </div>
+            <div class="mt-1 font-semibold text-base">
+              <span class="text-red-600 dark:text-red-400">Jami ayirilgan: ${totalSub} so'm</span>
+            </div>
+            <div class="mt-1 font-semibold text-base">
+              Qolgan qarzdorlik: <span class="text-blue-700 dark:text-blue-400 font-bold">${remaining} so'm</span>
+            </div>
+          ` : `
+            <div class="mt-1 font-semibold text-base text-gray-500 dark:text-gray-400">
+              <i class="fas fa-info-circle mr-1"></i>Hali qarzdorlik yozilmagan
+            </div>
+          `}
           <div class="flex flex-col sm:flex-row gap-2 mt-4 w-full">
             <button class="batafsil-search-user-btn bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded shadow text-sm w-full sm:w-auto" data-id="${user.id}">Batafsil</button>
             <button class="remove-search-user-btn bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded shadow text-sm w-full sm:w-auto" data-id="${user.id}">O'chirish</button>
@@ -2327,6 +2338,7 @@ async function renderAddedSearchUsers() {
       addedSearchUsers = addedSearchUsers.filter(u => u.id !== userId);
       renderAddedSearchUsers();
       saveAddedSearchUsers();
+      loadDebtors(); // Refresh the debtors list after removing a user
     };
   });
   
