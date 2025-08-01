@@ -47,6 +47,7 @@ try {
 // Global variables
 let addedSearchUsers = [];
 let allUsers = [];
+let userProducts = []; // Add this line to store user products
 
 // Global variable to track if debt has been written
 let debtWritten = false;
@@ -370,6 +371,7 @@ onAuthStateChanged(auth, async (user) => {
       loadUserTotals(); // Load totals from Firebase first
       loadDebtors();
       loadAddedSearchUsers();
+      loadUserProducts(); // Load user products
       loadAllUsers();
       checkNotifications();
       setupNotificationListener();
@@ -455,7 +457,9 @@ if (debtorForm) {
   debtorForm.onsubmit = async (e) => {
   e.preventDefault();
   const name = document.getElementById("debtorName").value.trim();
-  const product = document.getElementById("debtorProduct").value.trim();
+  const productSelect = document.getElementById("debtorProduct").value.trim();
+  const productCustom = document.getElementById("debtorProductCustom").value.trim();
+  const product = productSelect || productCustom;
   let count = parseInt(document.getElementById("debtorCount").value);
   let price = parseInt(document.getElementById("debtorPrice").value);
   const note = document.getElementById("debtorNote").value.trim();
@@ -676,11 +680,21 @@ function renderDebtors(debtors) {
       // Check if deadline is approaching
       const deadlineWarning = debtor.deadline ? checkDeadline(debtor.deadline) : null;
       
+      // Check if this debtor is profile added
+      const isProfileAdded = typeof addedSearchUsers !== 'undefined' && Array.isArray(addedSearchUsers) && 
+        addedSearchUsers.some(user => user.id === debtor.userId || user.id === debtor.code || user.id === debtor.id);
+      
       const card = document.createElement('div');
-      card.className = 'card animate-card p-5';
+      card.className = 'card animate-card p-5 relative';
       card.style.animationDelay = `${index * 0.05}s`;
       
+      // Add category badge
+      const categoryBadge = isProfileAdded ? 
+        '<div class="absolute top-3 right-3 bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-200 px-2 py-1 rounded-full text-xs font-medium flex items-center gap-1"><i class="fas fa-user-friends"></i> Profile</div>' :
+        '<div class="absolute top-3 right-3 bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-200 px-2 py-1 rounded-full text-xs font-medium flex items-center gap-1"><i class="fas fa-user-plus"></i> Qo\'lda</div>';
+      
       card.innerHTML = `
+        ${categoryBadge}
         <div class="flex items-start gap-4 mb-4">
           <div class="debtor-avatar bg-gradient-to-r from-indigo-500 to-purple-600">
             ${debtor.name.charAt(0)}
@@ -688,9 +702,6 @@ function renderDebtors(debtors) {
           <div class="flex-1">
             <div class="flex items-center justify-between">
               <h3 class="font-bold text-lg text-slate-800 dark:text-white">${debtor.name}</h3>
-              <span class="text-sm font-mono bg-indigo-100 dark:bg-slate-700 text-indigo-800 dark:text-indigo-300 px-2 py-1 rounded">
-                #${debtor.code || debtor.id.slice(0, 6)}
-              </span>
             </div>
             ${debtor.product ? `<div class="text-sm text-slate-600 dark:text-slate-400 mt-1">${debtor.product}</div>` : ''}
             
@@ -737,9 +748,9 @@ function renderDebtors(debtors) {
           </button>
           <button class="bg-red-500 hover:bg-red-600 text-white px-3 py-2 rounded-lg text-sm transition delete-btn" data-delete="${debtor.id}">
             <i class="fas fa-trash mr-1"></i> O'chirish
-          </button>
-        </div>
-      `;
+                          </button>
+              </div>
+            `;
       
       debtorsList.appendChild(card);
     });
@@ -1125,6 +1136,7 @@ function initApp() {
   document.getElementById('filterSelect')?.addEventListener('change', loadDebtors);
   document.getElementById('addDebtorBtn')?.addEventListener('click', () => {
     document.getElementById('addDebtorModal').classList.remove('hidden');
+    populateProductDropdown();
   });
   document.getElementById('viewDebtsBtn')?.addEventListener('click', () => {
     document.getElementById('viewDebtsModal').classList.remove('hidden');
@@ -1183,6 +1195,7 @@ function initApp() {
   loadUserTotals();
   loadAllUsers();
   loadAddedSearchUsers();
+  loadUserProducts(); // Load user products
   checkNotifications();
   
   // Setup listeners
@@ -1774,8 +1787,11 @@ function openDebtorModal(debtor) {
           
           <form id="addDebtForm" class="flex flex-col gap-3 mb-4">
             <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-              <input type="text" placeholder="Mahsulot nomi" class="p-3 bg-gray-100 dark:bg-gray-600 border border-gray-300 dark:border-gray-500 rounded focus:outline-none focus:ring-2 focus:ring-green-400 text-gray-900 dark:text-gray-100 transition" autocomplete="off">
-              <input type="number" placeholder="Mahsulot soni" class="p-3 bg-gray-100 dark:bg-gray-600 border border-gray-300 dark:border-gray-500 rounded focus:outline-none focus:ring-2 focus:ring-green-400 text-gray-900 dark:text-gray-100 transition" autocomplete="off">
+              <select id="debtorModalProduct" class="p-3 bg-gray-100 dark:bg-gray-600 border border-gray-300 dark:border-gray-500 rounded focus:outline-none focus:ring-2 focus:ring-green-400 text-gray-900 dark:text-gray-100 transition">
+                <option value="">Mahsulot tanlang yoki yozing</option>
+              </select>
+              <input id="debtorModalProductCustom" type="text" placeholder="Yangi mahsulot nomi" class="p-3 bg-gray-100 dark:bg-gray-600 border border-gray-300 dark:border-gray-500 rounded focus:outline-none focus:ring-2 focus:ring-green-400 text-gray-900 dark:text-gray-100 transition hidden">
+              <input type="number" placeholder="Mahsulot soni (ixtiyoriy)" class="p-3 bg-gray-100 dark:bg-gray-600 border border-gray-300 dark:border-gray-500 rounded focus:outline-none focus:ring-2 focus:ring-green-400 text-gray-900 dark:text-gray-100 transition" autocomplete="off">
               <input type="number" min="1" placeholder="Mahsulot narxi" class="p-3 bg-gray-100 dark:bg-gray-600 border border-gray-300 dark:border-gray-500 rounded focus:outline-none focus:ring-2 focus:ring-green-400 text-gray-900 dark:text-gray-100 transition" required autocomplete="off">
               <input type="text" placeholder="Izoh (ixtiyoriy)" class="p-3 bg-gray-100 dark:bg-gray-600 border border-gray-300 dark:border-gray-500 rounded focus:outline-none focus:ring-2 focus:ring-green-400 text-gray-900 dark:text-gray-100 transition" autocomplete="off">
             </div>
@@ -1849,6 +1865,9 @@ function openDebtorModal(debtor) {
   
   document.body.appendChild(modal);
   
+  // Populate product dropdown in the modal
+  populateDebtorModalProductDropdown();
+  
   // Close modal
   modal.querySelector('#closeDebtorModal').onclick = () => modal.remove();
   
@@ -1863,10 +1882,12 @@ function openDebtorModal(debtor) {
   modal.querySelector('#addDebtForm').onsubmit = async (e) => {
     e.preventDefault();
     
-    const product = e.target[0].value.trim();
-    let count = parseInt(e.target[1].value);
-    let price = parseInt(e.target[2].value);
-    const note = e.target[3].value.trim();
+    const productSelect = e.target[0].value.trim();
+    const productCustom = e.target[1].value.trim();
+    const product = productSelect || productCustom;
+    let count = parseInt(e.target[2].value);
+    let price = parseInt(e.target[3].value);
+    const note = e.target[4].value.trim();
 
     price = price * 1;
     let amount;
@@ -2419,5 +2440,331 @@ function getTimeAgo(date) {
 document.addEventListener('DOMContentLoaded', () => {
   initApp();
 });
+
+// Load user products from Firebase
+async function loadUserProducts() {
+  const user = auth.currentUser;
+  if (!user) return;
+  
+  try {
+    const userRef = doc(db, "users", user.uid);
+    const snap = await getDoc(userRef);
+    if (snap.exists() && Array.isArray(snap.data().products)) {
+      userProducts = snap.data().products;
+      renderProductsList();
+    }
+  } catch (error) {
+    console.error('Error loading user products:', error);
+  }
+}
+
+// Save user products to Firebase
+async function saveUserProducts() {
+  const user = auth.currentUser;
+  if (!user) return;
+  
+  try {
+    const userRef = doc(db, "users", user.uid);
+    await updateDoc(userRef, { products: userProducts });
+  } catch (error) {
+    console.error('Error saving user products:', error);
+  }
+}
+
+// Render products list
+function renderProductsList() {
+  const productsList = document.getElementById('productsList');
+  if (!productsList) return;
+  
+  if (userProducts.length === 0) {
+    productsList.innerHTML = `
+      <div class="text-center text-slate-500 dark:text-slate-400 py-4">
+        <i class="fas fa-box text-2xl mb-2"></i>
+        <p>Hali mahsulot qo'shilmagan</p>
+      </div>
+    `;
+  } else {
+    productsList.innerHTML = '';
+    userProducts.forEach((product, index) => {
+      const productItem = document.createElement('div');
+      productItem.className = 'flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-700 rounded-lg border border-slate-200 dark:border-slate-600';
+      productItem.innerHTML = `
+        <div class="flex items-center gap-3">
+          <div class="w-8 h-8 bg-gradient-to-r from-green-500 to-emerald-600 rounded-full flex items-center justify-center text-white text-sm">
+            <i class="fas fa-box"></i>
+          </div>
+          <div>
+            <h5 class="font-medium text-slate-800 dark:text-white">${product.name}</h5>
+            <p class="text-sm text-slate-600 dark:text-slate-400">${product.price} so'm</p>
+          </div>
+        </div>
+        <div class="flex items-center gap-2">
+          <button class="text-blue-500 hover:text-blue-700 dark:hover:text-blue-400" onclick="editProduct(${index})">
+            <i class="fas fa-edit"></i>
+          </button>
+          <button class="text-red-500 hover:text-red-700 dark:hover:text-red-400" onclick="removeProduct(${index})">
+            <i class="fas fa-trash"></i>
+          </button>
+        </div>
+      `;
+      productsList.appendChild(productItem);
+    });
+  }
+  
+  // Also populate the dropdown in the debtor form
+  populateProductDropdown();
+}
+
+// Add product to Firebase
+async function addProductToFirebase(name, price) {
+  const user = auth.currentUser;
+  if (!user) {
+    showNotification('Avval tizimga kirishingiz kerak!', 'error');
+    return;
+  }
+  
+  // Check if product already exists
+  const existingProduct = userProducts.find(p => p.name.toLowerCase() === name.toLowerCase());
+  if (existingProduct) {
+    showNotification('Bu mahsulot allaqachon mavjud!', 'error');
+    return;
+  }
+  
+  // Add to array
+  userProducts.push({
+    name: name,
+    price: price,
+    createdAt: new Date()
+  });
+  
+  // Save to Firebase
+  await saveUserProducts();
+  
+  // Re-render the list
+  renderProductsList();
+  
+  showNotification('Mahsulot muvaffaqiyatli qo\'shildi!', 'success');
+}
+
+// Populate product dropdown
+function populateProductDropdown() {
+  const productSelect = document.getElementById('debtorProduct');
+  const customProductInput = document.getElementById('debtorProductCustom');
+  
+  if (!productSelect) return;
+  
+  // Clear existing options except the first one
+  productSelect.innerHTML = '<option value="">Mahsulot tanlang yoki yozing</option>';
+  
+  // Add saved products
+  userProducts.forEach(product => {
+    const option = document.createElement('option');
+    option.value = product.name;
+    option.textContent = `${product.name} (${product.price} so'm)`;
+    productSelect.appendChild(option);
+  });
+  
+  // Remove existing event listener to prevent duplicates
+  const newProductSelect = productSelect.cloneNode(true);
+  productSelect.parentNode.replaceChild(newProductSelect, productSelect);
+  
+  // Add event listener for custom product
+  newProductSelect.addEventListener('change', function() {
+    if (this.value === '') {
+      // Show custom input for new product
+      if (customProductInput) {
+        customProductInput.classList.remove('hidden');
+        customProductInput.focus();
+      }
+    } else {
+      // Hide custom input if product is selected
+      if (customProductInput) {
+        customProductInput.classList.add('hidden');
+        customProductInput.value = '';
+      }
+      
+      // Auto-fill price if product is selected
+      const selectedProduct = userProducts.find(p => p.name === this.value);
+      if (selectedProduct) {
+        const priceInput = document.getElementById('debtorPrice');
+        if (priceInput) {
+          priceInput.value = selectedProduct.price;
+        }
+      }
+    }
+  });
+}
+
+// Populate product dropdown in debtor modal
+function populateDebtorModalProductDropdown() {
+  const productSelect = document.getElementById('debtorModalProduct');
+  const customProductInput = document.getElementById('debtorModalProductCustom');
+  
+  if (!productSelect) return;
+  
+  // Clear existing options except the first one
+  productSelect.innerHTML = '<option value="">Mahsulot tanlang yoki yozing</option>';
+  
+  // Add saved products
+  userProducts.forEach(product => {
+    const option = document.createElement('option');
+    option.value = product.name;
+    option.textContent = `${product.name} (${product.price} so'm)`;
+    productSelect.appendChild(option);
+  });
+  
+  // Remove existing event listener to prevent duplicates
+  const newProductSelect = productSelect.cloneNode(true);
+  productSelect.parentNode.replaceChild(newProductSelect, productSelect);
+  
+  // Add event listener for custom product
+  newProductSelect.addEventListener('change', function() {
+    if (this.value === '') {
+      // Show custom input for new product
+      if (customProductInput) {
+        customProductInput.classList.remove('hidden');
+        customProductInput.focus();
+      }
+    } else {
+      // Hide custom input if product is selected
+      if (customProductInput) {
+        customProductInput.classList.add('hidden');
+        customProductInput.value = '';
+      }
+      
+      // Auto-fill price if product is selected
+      const selectedProduct = userProducts.find(p => p.name === this.value);
+      if (selectedProduct) {
+        const priceInput = newProductSelect.closest('form').querySelector('input[type="number"][min="1"]');
+        if (priceInput) {
+          priceInput.value = selectedProduct.price;
+        }
+      }
+    }
+  });
+}
+
+window.addProductToFirebase = addProductToFirebase;
+
+// Edit product function
+window.editProduct = async function(index) {
+  const product = userProducts[index];
+  if (!product) return;
+  
+  // Create edit modal
+  const modal = document.createElement('div');
+  modal.id = 'editProductModal';
+  modal.className = 'fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50';
+  
+  modal.innerHTML = `
+    <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl w-full max-w-md mx-4">
+      <div class="p-6 border-b border-slate-200 dark:border-slate-700">
+        <div class="flex justify-between items-center">
+          <h3 class="text-xl font-bold text-slate-800 dark:text-white">Mahsulotni tahrirlash</h3>
+          <button id="closeEditProductModal" class="text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-white">
+            <i class="fas fa-times"></i>
+          </button>
+        </div>
+      </div>
+      <div class="p-6">
+        <form id="editProductForm" class="space-y-4">
+          <div>
+            <label class="block text-slate-700 dark:text-slate-300 mb-2">Mahsulot nomi</label>
+            <input id="editProductName" type="text" value="${product.name}" placeholder="Mahsulot nomini kiriting..." class="w-full p-3 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-white" required>
+          </div>
+          
+          <div>
+            <label class="block text-slate-700 dark:text-slate-300 mb-2">Narxi (so'm)</label>
+            <input id="editProductPrice" type="number" min="1" value="${product.price}" placeholder="Narxini kiriting..." class="w-full p-3 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-white" required>
+          </div>
+          
+          <div class="flex gap-3 pt-4">
+            <button type="button" id="cancelEditProduct" class="flex-1 bg-slate-300 hover:bg-slate-400 dark:bg-slate-600 dark:hover:bg-slate-500 text-slate-800 dark:text-slate-200 px-4 py-3 rounded-lg font-semibold transition">
+              Bekor qilish
+            </button>
+            <button type="submit" class="flex-1 bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white px-4 py-3 rounded-lg font-semibold transition">
+              <i class="fas fa-save mr-2"></i> Saqlash
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  `;
+  
+  document.body.appendChild(modal);
+  
+  // Close modal
+  modal.querySelector('#closeEditProductModal').onclick = () => modal.remove();
+  modal.querySelector('#cancelEditProduct').onclick = () => modal.remove();
+  
+  // Close modal when clicking outside
+  modal.addEventListener('click', (event) => {
+    if (event.target === modal) {
+      modal.remove();
+    }
+  });
+  
+  // Handle form submission
+  modal.querySelector('#editProductForm').onsubmit = async (e) => {
+    e.preventDefault();
+    
+    const newName = document.getElementById('editProductName').value.trim();
+    const newPrice = parseInt(document.getElementById('editProductPrice').value);
+    
+    if (!newName || !newPrice) {
+      showNotification('Iltimos, mahsulot nomi va narxini kiriting!', 'error');
+      return;
+    }
+    
+    // Check if name already exists (excluding current product)
+    const existingProduct = userProducts.find((p, i) => i !== index && p.name.toLowerCase() === newName.toLowerCase());
+    if (existingProduct) {
+      showNotification('Bu nomli mahsulot allaqachon mavjud!', 'error');
+      return;
+    }
+    
+    try {
+      // Update product
+      userProducts[index] = {
+        ...product,
+        name: newName,
+        price: newPrice,
+        updatedAt: new Date()
+      };
+      
+      // Save to Firebase
+      await saveUserProducts();
+      
+      // Re-render the list
+      renderProductsList();
+      
+      showNotification('Mahsulot muvaffaqiyatli yangilandi!', 'success');
+      modal.remove();
+    } catch (error) {
+      console.error('Error updating product:', error);
+      showNotification('Mahsulotni yangilashda xatolik yuz berdi!', 'error');
+    }
+  };
+}
+
+window.renderProductsList = renderProductsList;
+window.populateProductDropdown = populateProductDropdown;
+window.populateDebtorModalProductDropdown = populateDebtorModalProductDropdown;
+
+// Remove product function (for compatibility with HTML onclick)
+window.removeProduct = async function(index) {
+  if (confirm('Bu mahsulotni o\'chirishni xohlaysizmi?')) {
+    // Remove from array
+    userProducts.splice(index, 1);
+    
+    // Save to Firebase
+    await saveUserProducts();
+    
+    // Re-render the list
+    renderProductsList();
+    
+    showNotification('Mahsulot muvaffaqiyatli o\'chirildi!', 'success');
+  }
+};
 
 
