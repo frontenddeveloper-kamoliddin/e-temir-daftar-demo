@@ -843,6 +843,21 @@ function showPaymentModal(debtor) {
   modal.id = 'paymentModal';
   modal.className = 'fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50';
   
+  // Hide main dashboard elements when modal opens
+  const elementsToHide = [
+    document.getElementById('debtorsList'),
+    document.querySelector('.w-full.bg-white.dark\\:bg-slate-800.card.p-6.mb-6'), // Search and filters
+    document.querySelector('header'),
+    document.getElementById('greenPlusBtn'),
+    document.getElementById('scrollToTopBtn')
+  ];
+  
+  elementsToHide.forEach(element => {
+    if (element) {
+      element.style.display = 'none';
+    }
+  });
+  
   let totalAdd = 0, totalSub = 0;
   (debtor.history || []).forEach((h) => {
     if (h.type === "add") totalAdd += h.amount || 0;
@@ -922,14 +937,38 @@ function showPaymentModal(debtor) {
   
   document.body.appendChild(modal);
   
+  // Function to show hidden elements
+  const showHiddenElements = () => {
+    const elementsToShow = [
+      document.getElementById('debtorsList'),
+      document.querySelector('.w-full.bg-white.dark\\:bg-slate-800.card.p-6.mb-6'), // Search and filters
+      document.querySelector('header'),
+      document.getElementById('greenPlusBtn'),
+      document.getElementById('scrollToTopBtn')
+    ];
+    
+    elementsToShow.forEach(element => {
+      if (element) {
+        element.style.display = '';
+      }
+    });
+  };
+  
   // Close modal
-  modal.querySelector('#closePaymentModal').onclick = () => modal.remove();
-  modal.querySelector('#cancelPayment').onclick = () => modal.remove();
+  modal.querySelector('#closePaymentModal').onclick = () => {
+    modal.remove();
+    showHiddenElements();
+  };
+  modal.querySelector('#cancelPayment').onclick = () => {
+    modal.remove();
+    showHiddenElements();
+  };
   
   // Close modal when clicking outside
   modal.addEventListener('click', (event) => {
     if (event.target === modal) {
       modal.remove();
+      showHiddenElements();
     }
   });
   
@@ -949,6 +988,7 @@ function showPaymentModal(debtor) {
       
       showNotification(`${debtor.name} uchun barcha qarzlar to'liq tozalandi!`, 'success');
       modal.remove();
+      showHiddenElements();
       loadDebtors();
       await updateUserTotals();
     } catch (error) {
@@ -999,6 +1039,21 @@ function showDeleteConfirmationModal(debtor) {
   modal.id = 'deleteConfirmationModal';
   modal.className = 'fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50';
   
+  // Hide main dashboard elements when modal opens
+  const elementsToHide = [
+    document.getElementById('debtorsList'),
+    document.querySelector('.w-full.bg-white.dark\\:bg-slate-800.card.p-6.mb-6'), // Search and filters
+    document.querySelector('header'),
+    document.getElementById('greenPlusBtn'),
+    document.getElementById('scrollToTopBtn')
+  ];
+  
+  elementsToHide.forEach(element => {
+    if (element) {
+      element.style.display = 'none';
+    }
+  });
+  
   modal.innerHTML = `
     <div class="bg-white dark:bg-slate-800 rounded-lg shadow-xl max-w-md w-full mx-4 p-6">
       <div class="flex items-center gap-3 mb-4">
@@ -1033,13 +1088,34 @@ function showDeleteConfirmationModal(debtor) {
   
   document.body.appendChild(modal);
   
+  // Function to show hidden elements
+  const showHiddenElements = () => {
+    const elementsToShow = [
+      document.getElementById('debtorsList'),
+      document.querySelector('.w-full.bg-white.dark\\:bg-slate-800.card.p-6.mb-6'), // Search and filters
+      document.querySelector('header'),
+      document.getElementById('greenPlusBtn'),
+      document.getElementById('scrollToTopBtn')
+    ];
+    
+    elementsToShow.forEach(element => {
+      if (element) {
+        element.style.display = '';
+      }
+    });
+  };
+  
   // Close modal
-  modal.querySelector('#cancelDelete').onclick = () => modal.remove();
+  modal.querySelector('#cancelDelete').onclick = () => {
+    modal.remove();
+    showHiddenElements();
+  };
   
   // Close modal when clicking outside
   modal.addEventListener('click', (event) => {
     if (event.target === modal) {
       modal.remove();
+      showHiddenElements();
     }
   });
   
@@ -1051,6 +1127,7 @@ function showDeleteConfirmationModal(debtor) {
       
       showNotification(`${debtor.name} qarzdor muvaffaqiyatli o'chirildi!`, 'success');
       modal.remove();
+      showHiddenElements();
       loadDebtors();
       await updateUserTotals();
     } catch (error) {
@@ -1277,12 +1354,91 @@ async function addUserWithPermission(userToAdd) {
     return;
   }
   
-  // Add user directly
-  addedSearchUsers.push(userToAdd);
-  renderAddedSearchUsers();
-  saveAddedSearchUsers();
-  loadDebtors(); // Refresh the debtors list to include the new user
-  showNotification(`${userToAdd.name} muvaffaqiyatli qo'shildi!`, 'success');
+  // Show change name modal
+  showChangeNameModal(userToAdd);
+}
+
+// Show change name modal
+function showChangeNameModal(userToAdd) {
+  const modal = document.getElementById('changeNameModal');
+  const input = document.getElementById('newNameInput');
+  const saveBtn = document.getElementById('saveNewNameBtn');
+  const cancelBtn = document.getElementById('cancelChangeNameBtn');
+  const closeBtn = document.getElementById('closeChangeNameModal');
+  
+  // Set current name as placeholder
+  input.value = userToAdd.name || '';
+  input.placeholder = 'Yangi ismni kiriting...';
+  
+  // Show modal
+  modal.classList.remove('hidden');
+  input.focus();
+  
+  // Save button click handler
+  const saveHandler = async () => {
+    const newName = input.value.trim();
+    if (!newName) {
+      showNotification('Iltimos, ismni kiriting!', 'error');
+      return;
+    }
+    
+    // Update user name
+    userToAdd.name = newName;
+    
+    // Add user to the list
+    addedSearchUsers.push(userToAdd);
+    renderAddedSearchUsers();
+    saveAddedSearchUsers();
+    loadDebtors(); // Refresh the debtors list to include the new user
+    showNotification(`${newName} muvaffaqiyatli qo'shildi!`, 'success');
+    
+    // Close modal
+    closeModal();
+  };
+  
+  // Cancel button click handler
+  const cancelHandler = () => {
+    closeModal();
+  };
+  
+  // Close button click handler
+  const closeHandler = () => {
+    closeModal();
+  };
+  
+  // Close modal function
+  let closeModal = () => {
+    modal.classList.add('hidden');
+    input.value = '';
+    
+    // Remove event listeners
+    saveBtn.removeEventListener('click', saveHandler);
+    cancelBtn.removeEventListener('click', cancelHandler);
+    closeBtn.removeEventListener('click', closeHandler);
+    modal.removeEventListener('click', modalClickHandler);
+    input.removeEventListener('keydown', enterHandler);
+  };
+  
+  // Modal overlay click handler
+  const modalClickHandler = (e) => {
+    if (e.target === modal) {
+      closeModal();
+    }
+  };
+  
+  // Enter key handler
+  const enterHandler = (e) => {
+    if (e.key === 'Enter') {
+      saveHandler();
+    }
+  };
+  
+  // Add event listeners
+  saveBtn.addEventListener('click', saveHandler);
+  cancelBtn.addEventListener('click', cancelHandler);
+  closeBtn.addEventListener('click', closeHandler);
+  modal.addEventListener('click', modalClickHandler);
+  input.addEventListener('keydown', enterHandler);
 }
 
 
@@ -1296,7 +1452,8 @@ function setupModalCloseButtons() {
     { id: 'closeViewDebtsModal', modal: 'viewDebtsModal' },
     { id: 'closeMyDebtsModal', modal: 'myDebtsModal' },
     { id: 'closeMessagesModal', modal: 'messagesModal' },
-    { id: 'closeAddDebtorModal', modal: 'addDebtorModal' }
+    { id: 'closeAddDebtorModal', modal: 'addDebtorModal' },
+    { id: 'closeChangeNameModal', modal: 'changeNameModal' }
   ];
   
   closeButtons.forEach(({ id, modal }) => {
@@ -1756,6 +1913,21 @@ function openDebtorModal(debtor) {
   modal.id = 'debtorDetailModal';
   modal.className = 'fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50';
   
+  // Hide main dashboard elements when modal opens
+  const elementsToHide = [
+    document.getElementById('debtorsList'),
+    document.querySelector('.w-full.bg-white.dark\\:bg-slate-800.card.p-6.mb-6'), // Search and filters
+    document.querySelector('header'),
+    document.getElementById('greenPlusBtn'),
+    document.getElementById('scrollToTopBtn')
+  ];
+  
+  elementsToHide.forEach(element => {
+    if (element) {
+      element.style.display = 'none';
+    }
+  });
+  
   const currentUserId = auth.currentUser.uid;
   
   // Filter history to only show transactions created by current user
@@ -1868,13 +2040,34 @@ function openDebtorModal(debtor) {
   // Populate product dropdown in the modal
   populateDebtorModalProductDropdown();
   
+  // Function to show hidden elements
+  const showHiddenElements = () => {
+    const elementsToShow = [
+      document.getElementById('debtorsList'),
+      document.querySelector('.w-full.bg-white.dark\\:bg-slate-800.card.p-6.mb-6'), // Search and filters
+      document.querySelector('header'),
+      document.getElementById('greenPlusBtn'),
+      document.getElementById('scrollToTopBtn')
+    ];
+    
+    elementsToShow.forEach(element => {
+      if (element) {
+        element.style.display = '';
+      }
+    });
+  };
+  
   // Close modal
-  modal.querySelector('#closeDebtorModal').onclick = () => modal.remove();
+  modal.querySelector('#closeDebtorModal').onclick = () => {
+    modal.remove();
+    showHiddenElements();
+  };
   
   // Close modal when clicking outside
   modal.addEventListener('click', (event) => {
     if (event.target === modal) {
       modal.remove();
+      showHiddenElements();
     }
   });
   
@@ -1922,7 +2115,29 @@ function openDebtorModal(debtor) {
       });
       
       showNotification('Qarz muvaffaqiyatli qo\'shildi!', 'success');
+      
+      // Update the debtor object with new data
+      debtor.history = debtor.history || [];
+      debtor.history.push({
+        type: "add",
+        amount,
+        count,
+        price,
+        product,
+        note,
+        date: Timestamp.now(),
+        authorId: auth.currentUser.uid
+      });
+      debtor.totalAdded = (debtor.totalAdded || 0) + amount;
+      
+      // Clear the form
+      e.target.reset();
+      
+      // Refresh the modal content instead of closing it
       modal.remove();
+      openDebtorModal(debtor);
+      
+      // Update the main debtors list in background
       loadDebtors();
       await updateUserTotals();
     } catch (error) {
@@ -1954,7 +2169,26 @@ function openDebtorModal(debtor) {
       });
       
       showNotification('Qarz muvaffaqiyatli ayirildi!', 'success');
+      
+      // Update the debtor object with new data
+      debtor.history = debtor.history || [];
+      debtor.history.push({
+        type: "sub",
+        amount: val,
+        note,
+        date: Timestamp.now(),
+        authorId: auth.currentUser.uid
+      });
+      debtor.totalSubtracted = (debtor.totalSubtracted || 0) + val;
+      
+      // Clear the form
+      e.target.reset();
+      
+      // Refresh the modal content instead of closing it
       modal.remove();
+      openDebtorModal(debtor);
+      
+      // Update the main debtors list in background
       loadDebtors();
       await updateUserTotals();
     } catch (error) {
@@ -1978,7 +2212,17 @@ function openDebtorModal(debtor) {
             });
             
             showNotification('Qarz muvaffaqiyatli tugatildi!', 'success');
+            
+            // Update the debtor object with new data
+            debtor.history = [];
+            debtor.totalAdded = 0;
+            debtor.totalSubtracted = 0;
+            
+            // Refresh the modal content instead of closing it
             modal.remove();
+            openDebtorModal(debtor);
+            
+            // Update the main debtors list in background
             loadDebtors();
             await updateUserTotals();
           } catch (error) {
