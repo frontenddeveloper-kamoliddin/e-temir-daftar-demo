@@ -1354,92 +1354,54 @@ async function addUserWithPermission(userToAdd) {
     return;
   }
   
-  // Show change name modal
-  showChangeNameModal(userToAdd);
+  // Add user directly without name change modal
+  addedSearchUsers.push(userToAdd);
+  renderAddedSearchUsers();
+  saveAddedSearchUsers();
+  loadDebtors(); // Refresh the debtors list to include the new user
+  showNotification(`${userToAdd.name} muvaffaqiyatli qo'shildi!`, 'success');
+  
+  // Close the search modal
+  const viewDebtsModal = document.getElementById('viewDebtsModal');
+  if (viewDebtsModal) {
+    viewDebtsModal.classList.add('hidden');
+  }
+  
+  // Find or create debtor record and open detailed modal
+  try {
+    const debtorsSnap = await getDocs(collection(db, "debtors"));
+    const debtor = debtorsSnap.docs
+      .map(doc => ({ ...doc.data(), id: doc.id }))
+      .find(d => d.userId === userToAdd.id || d.code === userToAdd.id || d.id === userToAdd.id);
+
+    if (debtor) {
+      // If debtor exists, open their modal
+      openDebtorModal(debtor);
+    } else {
+      // Create a new debtor record for this user
+      const newDebtor = {
+        name: userToAdd.name || userToAdd.displayName || 'Noma\'lum',
+        userId: userToAdd.id,
+        code: userToAdd.code || generateUserCode(),
+        debts: [],
+        createdAt: new Date(),
+        updatedAt: new Date()
+      };
+      
+      const docRef = await addDoc(collection(db, "debtors"), newDebtor);
+      newDebtor.id = docRef.id;
+      
+      showNotification(`${userToAdd.name} uchun yangi qarzdor yozuv yaratildi!`, 'success');
+      openDebtorModal(newDebtor);
+      await updateUserTotals();
+    }
+  } catch (error) {
+    console.error('Error creating new debtor:', error);
+    showNotification('Yangi qarzdor yaratishda xatolik yuz berdi!', 'error');
+  }
 }
 
-// Show change name modal
-function showChangeNameModal(userToAdd) {
-  const modal = document.getElementById('changeNameModal');
-  const input = document.getElementById('newNameInput');
-  const saveBtn = document.getElementById('saveNewNameBtn');
-  const cancelBtn = document.getElementById('cancelChangeNameBtn');
-  const closeBtn = document.getElementById('closeChangeNameModal');
-  
-  // Set current name as placeholder
-  input.value = userToAdd.name || '';
-  input.placeholder = 'Yangi ismni kiriting...';
-  
-  // Show modal
-  modal.classList.remove('hidden');
-  input.focus();
-  
-  // Save button click handler
-  const saveHandler = async () => {
-    const newName = input.value.trim();
-    if (!newName) {
-      showNotification('Iltimos, ismni kiriting!', 'error');
-      return;
-    }
-    
-    // Update user name
-    userToAdd.name = newName;
-    
-    // Add user to the list
-    addedSearchUsers.push(userToAdd);
-    renderAddedSearchUsers();
-    saveAddedSearchUsers();
-    loadDebtors(); // Refresh the debtors list to include the new user
-    showNotification(`${newName} muvaffaqiyatli qo'shildi!`, 'success');
-    
-    // Close modal
-    closeModal();
-  };
-  
-  // Cancel button click handler
-  const cancelHandler = () => {
-    closeModal();
-  };
-  
-  // Close button click handler
-  const closeHandler = () => {
-    closeModal();
-  };
-  
-  // Close modal function
-  let closeModal = () => {
-    modal.classList.add('hidden');
-    input.value = '';
-    
-    // Remove event listeners
-    saveBtn.removeEventListener('click', saveHandler);
-    cancelBtn.removeEventListener('click', cancelHandler);
-    closeBtn.removeEventListener('click', closeHandler);
-    modal.removeEventListener('click', modalClickHandler);
-    input.removeEventListener('keydown', enterHandler);
-  };
-  
-  // Modal overlay click handler
-  const modalClickHandler = (e) => {
-    if (e.target === modal) {
-      closeModal();
-    }
-  };
-  
-  // Enter key handler
-  const enterHandler = (e) => {
-    if (e.key === 'Enter') {
-      saveHandler();
-    }
-  };
-  
-  // Add event listeners
-  saveBtn.addEventListener('click', saveHandler);
-  cancelBtn.addEventListener('click', cancelHandler);
-  closeBtn.addEventListener('click', closeHandler);
-  modal.addEventListener('click', modalClickHandler);
-  input.addEventListener('keydown', enterHandler);
-}
+
 
 
 
