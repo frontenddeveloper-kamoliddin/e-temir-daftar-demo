@@ -637,8 +637,11 @@ function calculateTotalDebt(debtor) {
   let totalAdd = 0, totalSub = 0;
   
   userHistory.forEach((h) => {
-    if (h.type === "add") totalAdd += h.amount || 0;
-    if (h.type === "sub") totalSub += h.amount || 0;
+    // Only count non-deleted transactions
+    if (!h.deleted) {
+      if (h.type === "add") totalAdd += h.amount || 0;
+      if (h.type === "sub") totalSub += h.amount || 0;
+    }
   });
   
   return totalAdd - totalSub;
@@ -670,8 +673,8 @@ function renderDebtors(debtors) {
       // Filter history to only show transactions created by current user
       const userHistory = (debtor.history || []).filter(h => h.authorId === currentUserId || !h.authorId);
       
-      const totalAdded = userHistory.reduce((sum, h) => h.type === 'add' ? sum + (h.amount || 0) : sum, 0);
-      const totalSubtracted = userHistory.reduce((sum, h) => h.type === 'sub' ? sum + (h.amount || 0) : sum, 0);
+      const totalAdded = userHistory.reduce((sum, h) => !h.deleted && h.type === 'add' ? sum + (h.amount || 0) : sum, 0);
+      const totalSubtracted = userHistory.reduce((sum, h) => !h.deleted && h.type === 'sub' ? sum + (h.amount || 0) : sum, 0);
       const totalDebt = totalAdded - totalSubtracted;
       
       // Calculate progress percentage
@@ -1611,6 +1614,9 @@ async function loadMyDebts() {
         
         myDebts.forEach(d => {
           (d.history || []).forEach(h => {
+            // Skip deleted transactions
+            if (h.deleted) return;
+            
             const authorId = h.authorId || d.userId;
             const authorName = usersMap[authorId] || authorId || "Noma'lum";
             
@@ -1662,8 +1668,11 @@ async function loadMyDebts() {
           let authorTotalSubtracted = 0;
           
           const authorDebtsHtml = authorDebts.map(h => {
-            if (h.type === "add") authorTotalAdded += h.amount || 0;
-            if (h.type === "sub") authorTotalSubtracted += h.amount || 0;
+            // Skip deleted transactions in calculation
+            if (!h.deleted) {
+              if (h.type === "add") authorTotalAdded += h.amount || 0;
+              if (h.type === "sub") authorTotalSubtracted += h.amount || 0;
+            }
             
             // Mahsulot ma'lumotlarini olish
             const productInfo = h.product ? `
@@ -1684,10 +1693,12 @@ async function loadMyDebts() {
               </div>
             ` : '';
             
+            const isDeleted = h.deleted === true;
             return `
-              <div class="p-3 rounded mb-2 ${h.type === "add" ? "bg-green-100 dark:bg-green-900" : "bg-red-100 dark:bg-red-900"}">
+              <div class="p-3 rounded mb-2 ${isDeleted ? 'bg-gray-100 dark:bg-gray-700 opacity-60' : (h.type === "add" ? "bg-green-100 dark:bg-green-900" : "bg-red-100 dark:bg-red-900")} relative">
+                ${isDeleted ? '<div class="absolute top-2 right-2 bg-red-500 text-white text-xs px-2 py-1 rounded">O\'chirilgan</div>' : ''}
                 <div class="flex justify-between items-start mb-1">
-                  <b class="text-lg">${h.type === "add" ? "+" : "-"}${h.amount} so'm</b>
+                  <b class="text-lg ${isDeleted ? 'text-gray-500 dark:text-gray-400' : ''}">${h.type === "add" ? "+" : "-"}${h.amount} so'm</b>
                   <span class="text-xs text-gray-500">${h.date && h.date.toDate ? h.date.toDate().toLocaleString("uz-UZ") : ""}</span>
                 </div>
                 ${productInfo}
@@ -1897,8 +1908,11 @@ function openDebtorModal(debtor) {
   
   let totalAdd = 0, totalSub = 0;
   userHistory.forEach((h) => {
-    if (h.type === "add") totalAdd += h.amount || 0;
-    if (h.type === "sub") totalSub += h.amount || 0;
+    // Only count non-deleted transactions
+    if (!h.deleted) {
+      if (h.type === "add") totalAdd += h.amount || 0;
+      if (h.type === "sub") totalSub += h.amount || 0;
+    }
   });
   
   const totalDebt = totalAdd - totalSub;
@@ -1955,19 +1969,24 @@ function openDebtorModal(debtor) {
           <div class="font-bold mb-4 text-gray-900 dark:text-white">Barcha harakatlar</div>
           <div class="space-y-3 max-h-96 overflow-y-auto">
             ${userHistory.length > 0 ? 
-              userHistory.map(h => {
+              userHistory.map((h, index) => {
                 const date = h.date?.toDate ? h.date.toDate() : new Date();
                 const time = date.toLocaleString("uz-UZ");
+                const isDeleted = h.deleted === true;
                 return `
-                  <div class="p-3 rounded-lg ${h.type === "add" ? "bg-green-100 dark:bg-green-900" : "bg-red-100 dark:bg-red-900"}">
-                    <div class="font-semibold ${h.type === "add" ? "text-green-800 dark:text-green-200" : "text-red-800 dark:text-red-200"}">
+                  <div class="p-3 rounded-lg ${isDeleted ? 'bg-gray-100 dark:bg-gray-700 opacity-60' : (h.type === "add" ? "bg-green-100 dark:bg-green-900" : "bg-red-100 dark:bg-red-900")} relative">
+                    ${isDeleted ? '<div class="absolute top-2 right-2 bg-red-500 text-white text-xs px-2 py-1 rounded">O\'chirilgan</div>' : ''}
+                    <div class="font-semibold ${isDeleted ? 'text-gray-500 dark:text-gray-400' : (h.type === "add" ? "text-green-800 dark:text-green-200" : "text-red-800 dark:text-red-200")}">
                       ${h.type === "add" ? "+" : "-"}${h.amount} so'm
                     </div>
-                    ${h.product ? `<div class="text-sm text-gray-600 dark:text-gray-300">Mahsulot: ${h.product}</div>` : ""}
-                    ${h.count ? `<div class="text-sm text-gray-600 dark:text-gray-300">Miqdori: ${h.count} ta</div>` : ""}
-                    ${h.price ? `<div class="text-sm text-gray-600 dark:text-gray-300">Narxi: ${formatMoney(h.price)} so'm</div>` : ""}
-                    ${h.note ? `<div class="text-sm text-gray-500 dark:text-gray-400 mt-1">${h.note}</div>` : ""}
+                    ${h.product ? `<div class="text-sm ${isDeleted ? 'text-gray-400 dark:text-gray-500' : 'text-gray-600 dark:text-gray-300'}">Mahsulot: ${h.product}</div>` : ""}
+                    ${h.count ? `<div class="text-sm ${isDeleted ? 'text-gray-400 dark:text-gray-500' : 'text-gray-600 dark:text-gray-300'}">Miqdori: ${h.count} ta</div>` : ""}
+                    ${h.price ? `<div class="text-sm ${isDeleted ? 'text-gray-400 dark:text-gray-500' : 'text-gray-600 dark:text-gray-300'}">Narxi: ${formatMoney(h.price)} so'm</div>` : ""}
+                    ${h.note ? `<div class="text-sm ${isDeleted ? 'text-gray-400 dark:text-gray-500' : 'text-gray-500 dark:text-gray-400'} mt-1">${h.note}</div>` : ""}
                     <div class="text-xs text-gray-400 mt-2">${time}</div>
+                    ${!isDeleted ? `<button class="absolute top-2 right-2 bg-red-500 hover:bg-red-600 text-white text-xs px-2 py-1 rounded transition delete-transaction-btn" data-index="${index}">
+                      <i class="fas fa-trash"></i>
+                    </button>` : ''}
                   </div>
                 `;
               }).join("") : 
@@ -2001,6 +2020,43 @@ function openDebtorModal(debtor) {
   
   // Populate product dropdown in the modal
   populateDebtorModalProductDropdown();
+  
+  // Add event listeners for delete transaction buttons
+  modal.querySelectorAll('.delete-transaction-btn').forEach(btn => {
+    btn.addEventListener('click', async (e) => {
+      e.preventDefault();
+      const index = parseInt(btn.getAttribute('data-index'));
+      
+      if (confirm('Bu harakatni o\'chirishni xohlaysizmi?')) {
+        try {
+          // Mark the transaction as deleted
+          const updatedHistory = [...userHistory];
+          updatedHistory[index] = { ...updatedHistory[index], deleted: true };
+          
+          const ref = doc(db, "debtors", debtor.id);
+          await updateDoc(ref, {
+            history: updatedHistory
+          });
+          
+          showNotification('Harakat o\'chirildi!', 'success');
+          
+          // Update the debtor object with new data
+          debtor.history = updatedHistory;
+          
+          // Refresh the modal content
+          modal.remove();
+          openDebtorModal(debtor);
+          
+          // Update the main debtors list in background
+          loadDebtors();
+          await updateUserTotals();
+        } catch (error) {
+          console.error('Error deleting transaction:', error);
+          showNotification('Harakatni o\'chirishda xatolik yuz berdi!', 'error');
+        }
+      }
+    });
+  });
   
   // Function to show hidden elements
   const showHiddenElements = () => {
