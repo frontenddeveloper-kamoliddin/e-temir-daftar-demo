@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Bosh Sahifa - Qarzdorlar Boshqaruvi</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💰</text></svg>">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    :root {
+      --primary: #4f46e5;
+      --secondary: #10b981;
+      --accent: #f59e0b;
+      --dark: #1e293b;
+      --light: #f8fafc;
+    }
+    
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    
+    .animate-card {
+      animation: fadeIn 0.5s ease-out forwards;
+      opacity: 0;
+    }
+    
+    .card {
+      background: rgba(255, 255, 255, 0.85);
+      backdrop-filter: blur(12px);
+      border-radius: 16px;
+      box-shadow: 0 8px 32px rgba(31, 38, 135, 0.15);
+      transition: all 0.3s ease;
+      border: 1px solid rgba(255, 255, 255, 0.18);
+    }
+    
+    .card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 12px 40px rgba(31, 38, 135, 0.25);
+    }
+    
+    .dark .card {
+      background: rgba(30, 41, 59, 0.85);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    
+    .stat-card {
+      min-height: 140px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      padding: 24px;
+      color: white;
+      border-radius: 16px;
+      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1);
+      transition: transform 0.3s ease;
+    }
+    
+    .stat-card:hover {
+      transform: scale(1.03);
+    }
+    
+    .loader {
+      width: 56px;
+      height: 56px;
+      border: 5px solid rgba(79, 70, 229, 0.3);
+      border-radius: 50%;
+      border-top-color: var(--primary);
+      animation: spin 1s ease-in-out infinite;
+    }
+    
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+    
+    .floating-btn {
+      position: fixed;
+      bottom: 30px;
+      right: 30px;
+      width: 60px;
+      height: 60px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+      transition: all 0.3s ease;
+      z-index: 50;
+    }
+    
+    .floating-btn:hover {
+      transform: scale(1.1);
+      box-shadow: 0 6px 25px rgba(0, 0, 0, 0.4);
+    }
+    
+    .table-card {
+      background: rgba(255, 255, 255, 0.85);
+      backdrop-filter: blur(12px);
+      border-radius: 16px;
+      box-shadow: 0 8px 32px rgba(31, 38, 135, 0.15);
+      transition: all 0.3s ease;
+      border: 1px solid rgba(255, 255, 255, 0.18);
+      overflow: hidden;
+    }
+    
+    .dark .table-card {
+      background: rgba(30, 41, 59, 0.85);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    
+    .table-card table {
+      width: 100%;
+      border-collapse: separate;
+      border-spacing: 0;
+    }
+    
+    .table-card th {
+      background: rgba(79, 70, 229, 0.1);
+      color: #4f46e5;
+      font-weight: 600;
+      padding: 16px;
+      text-align: left;
+      border-bottom: 1px solid rgba(79, 70, 229, 0.2);
+    }
+    
+    .dark .table-card th {
+      background: rgba(79, 70, 229, 0.2);
+      color: #a5b4fc;
+      border-bottom: 1px solid rgba(79, 70, 229, 0.3);
+    }
+    
+    .table-card td {
+      padding: 16px;
+      border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+      color: #374151;
+    }
+    
+    .dark .table-card td {
+      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+      color: #e5e7eb;
+    }
+    
+    .table-card tbody tr:hover {
+      background: rgba(79, 70, 229, 0.05);
+    }
+    
+    .dark .table-card tbody tr:hover {
+      background: rgba(79, 70, 229, 0.1);
+    }
+    
+    .table-card tbody tr:last-child td {
+      border-bottom: none;
+    }
+  </style>
+</head>
+<body class="bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800 min-h-screen">
+  <!-- Sidebar -->
+  <div id="sidebar" class="fixed top-0 left-0 h-full w-64 bg-white dark:bg-slate-800 shadow-2xl z-40 transform -translate-x-full transition-transform duration-300">
+    <div class="flex items-center justify-between p-6 border-b border-slate-200 dark:border-slate-700">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 bg-gradient-to-r from-indigo-500 to-purple-600 rounded-full flex items-center justify-center text-white font-bold">
+          <i class="fas fa-user"></i>
+        </div>
+        <div>
+          <div id="userName" class="font-bold text-slate-800 dark:text-white">Foydalanuvchi</div>
+          <div id="userId" class="text-xs text-slate-500 dark:text-slate-400">ID: #000</div>
+        </div>
+      </div>
+      <button id="closeSidebar" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300">
+        <i class="fas fa-times text-xl"></i>
+      </button>
+    </div>
+    
+    <div class="p-6 space-y-4">
+      <button onclick="window.location.href='dashboard.html'" class="w-full bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white px-4 py-3 rounded-lg font-medium transition flex items-center gap-3">
+        <i class="fas fa-tachometer-alt"></i>
+        Dashboard
+      </button>
+      <button onclick="window.location.href='xabarlar.html'" class="w-full bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white px-4 py-3 rounded-lg font-medium transition flex items-center gap-3">
+        <i class="fas fa-envelope"></i>
+        Xabarlar
+      </button>
+      <button id="logoutBtn" class="w-full bg-red-500 hover:bg-red-600 text-white px-4 py-3 rounded-lg font-medium transition flex items-center gap-3">
+        <i class="fas fa-sign-out-alt"></i>
+        Chiqish
+      </button>
+    </div>
+  </div>
+  
+  <div id="sidebarOverlay" class="fixed inset-0 bg-black bg-opacity-50 z-30 hidden"></div>
+
+  <!-- Main Content -->
+  <div class="min-h-screen">
+    <!-- Header -->
+    <header class="bg-white dark:bg-slate-800 shadow-sm border-b border-slate-200 dark:border-slate-700">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="flex items-center justify-between h-16">
+          <div class="flex items-center gap-4">
+            <button id="openSidebar" class="text-slate-600 dark:text-slate-300 hover:text-slate-800 dark:hover:text-white p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 transition">
+              <i class="fas fa-bars text-xl"></i>
+            </button>
+            <h1 class="text-2xl font-bold text-slate-800 dark:text-white">Bosh Sahifa</h1>
+          </div>
+          
+          <div class="flex items-center gap-4">
+            <button class="text-slate-600 dark:text-slate-300 hover:text-slate-800 dark:hover:text-white p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 transition">
+              <i class="fas fa-bell text-xl"></i>
+            </button>
+            <div class="w-8 h-8 bg-gradient-to-r from-indigo-500 to-purple-600 rounded-full flex items-center justify-center text-white font-bold text-sm">
+              <i class="fas fa-user"></i>
+            </div>
+          </div>
+        </div>
+      </div>
+    </header>
+    
+    <!-- Stats Cards -->
+    <div class="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <div class="stat-card bg-gradient-to-r from-indigo-500 to-indigo-600">
+          <div class="text-lg">Umumiy Qo'shilgan</div>
+          <div id="totalAdded" class="text-3xl font-bold mt-2">0 so'm</div>
+          <div class="flex items-center gap-2 mt-3">
+            <i class="fas fa-arrow-up"></i>
+            <span>Oxirgi 30 kun</span>
+          </div>
+        </div>
+        
+        <div class="stat-card bg-gradient-to-r from-emerald-500 to-emerald-600">
+          <div class="text-lg">Umumiy Ayirilgan</div>
+          <div id="totalSubtracted" class="text-3xl font-bold mt-2">0 so'm</div>
+          <div class="flex items-center gap-2 mt-3">
+            <i class="fas fa-arrow-down"></i>
+            <span>Oxirgi 30 kun</span>
+          </div>
+        </div>
+        
+        <div class="stat-card bg-gradient-to-r from-amber-500 to-amber-600">
+          <div class="text-lg">Umumiy Qarzdorlik</div>
+          <div id="totalDebt" class="text-3xl font-bold mt-2">0 so'm</div>
+          <div class="flex items-center gap-2 mt-3">
+            <i class="fas fa-users"></i>
+            <span id="totalDebtors">0 kishi</span>
+          </div>
+        </div>
+        
+        <div class="stat-card bg-gradient-to-r from-purple-500 to-purple-600">
+          <div class="text-lg">Faol Qarzdorlar</div>
+          <div id="activeDebtors" class="text-3xl font-bold mt-2">0</div>
+          <div class="flex items-center gap-2 mt-3">
+            <i class="fas fa-user-check"></i>
+            <span>Faol</span>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Charts Section -->
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+        <div class="card p-6">
+          <h3 class="text-lg font-bold text-slate-800 dark:text-white mb-4">Qarzlar Harakati (7 kun)</h3>
+          <canvas id="debtChart" height="250"></canvas>
+        </div>
+        
+        <div class="card p-6">
+          <h3 class="text-lg font-bold text-slate-800 dark:text-white mb-4">Top Qarzdorlar</h3>
+          <canvas id="ratingChart" height="250"></canvas>
+        </div>
+      </div>
+      
+      <!-- Tables Section -->
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+        <div class="table-card">
+          <div class="p-6 border-b border-slate-200 dark:border-slate-700">
+            <h3 class="text-lg font-bold text-slate-800 dark:text-white">Eng Uzoqdan Beri Bermayotgan Qarzdorlar</h3>
+          </div>
+          <div class="overflow-x-auto">
+            <table>
+              <thead>
+                <tr>
+                  <th>#</th>
+                  <th>Ism</th>
+                  <th>Umumiy qarz</th>
+                  <th>Oxirgi sana</th>
+                </tr>
+              </thead>
+              <tbody id="longestDebtorsTable">
+                <tr>
+                  <td colspan="4" class="text-center text-slate-500 dark:text-slate-400 py-8">Ma'lumotlar yuklanmoqda...</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+        
+        <div class="table-card">
+          <div class="p-6 border-b border-slate-200 dark:border-slate-700">
+            <h3 class="text-lg font-bold text-slate-800 dark:text-white">Eng Ko'p Qarz Olgan Insolar</h3>
+          </div>
+          <div class="overflow-x-auto">
+            <table>
+              <thead>
+                <tr>
+                  <th>#</th>
+                  <th>Ism</th>
+                  <th>Umumiy qarz</th>
+                </tr>
+              </thead>
+              <tbody id="topDebtorsTable">
+                <tr>
+                  <td colspan="3" class="text-center text-slate-500 dark:text-slate-400 py-8">Ma'lumotlar yuklanmoqda...</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Floating Button -->
+  <button onclick="window.location.href='dashboard.html'" class="floating-btn bg-gradient-to-r from-indigo-500 to-purple-600 text-white">
+    <i class="fas fa-plus text-2xl"></i>
+  </button>
+  
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script type="module" src="bosh-sahifa.js"></script>
+</body>
+</html>
